@@ -9,7 +9,7 @@ OnExitRemove         = TRUE
 +JobFlavour = "nextweek"
 +JobType="evaluate"
 +AccountingGroup ="group_u_ATLASWISC.all"
-request_CPUs = 6
-Request_memory = 12 GB
-Request_disk   = 5 GB
+request_CPUs = 1
+Request_memory = 2 GB
+Request_disk   = 1 GB
 queue

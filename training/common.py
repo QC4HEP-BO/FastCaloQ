@@ -115,8 +115,13 @@ def _split_energy(input_file, vector):
         Input: h5file and vector with length of nevents
         Output: a list of vectors splitted by energies, and the energies
     '''
-    energies = get_energies(input_file)
-    categories, counts = get_counts(input_file)
+    if isinstance(input_file, str):
+        energies = get_energies(input_file)
+        categories, counts = get_counts(input_file)
+    else: # for GAN predict more statistics than the Geant size
+        energies = input_file
+        unique_vals = np.unique(input_file)
+        categories = unique_vals.astype(int)
 
     joint_array = np.concatenate([energies, vector], axis=1)
     joint_array = joint_array[joint_array[:, 0].argsort()]
@@ -186,4 +191,44 @@ def get_bins_given_edges(low_edge:float, high_edge:float, nbins:int, decimals:in
         high_bin_center = high_edge - bin_width /2
         bins = np.around(np.linspace(low_bin_center, high_bin_center, nbins), decimals)
     return bins
+
+def get_xrange_from_caloflow(particle, energy):
+
+    bin_map = {
+        'photons': {
+            256     : [0, 2.09],
+            512     : [0.0037, 1.74],
+            1024    : [0.5, 1.26],
+            2048    : [0.7, 1.2],
+            4096    : [0.82, 1.15],
+            8192    : [0.78, 1.08],
+            16384   : [0.85, 1.03],
+            32768   : [0.92, 1.02],
+            65536   : [0.9, 1.01],
+            131072  : [0.88, 1.0],
+            262144  : [0.88, 1.0],
+            524288  : [0.9, 0.998],
+            1048576 : [0.89, 0.995],
+            2097152 : [0.9, 0.99],
+            4194304 : [0.89, 0.988],
+        },
+        'pions': {
+            256     : [0, 2.0] ,
+            512     : [0, 2.0] ,
+            1024    : [0, 2.0] ,
+            2048    : [0, 1.7] ,
+            4096    : [0.1, 1.7] ,
+            8192    : [0.2, 1.4] ,
+            16384   : [0.25, 1.3] ,
+            32768   : [0.3, 1.2] ,
+            65536   : [0.34, 1.2] ,
+            131072  : [0.3,1.2] ,
+            262144  : [0.32, 1.15] ,
+            524288  : [0.5, 1.15] ,
+            1048576 : [0.5, 1.15] ,
+            2097152 : [0.62, 1.1] ,
+            4194304 : [0.8, 1.0] ,
+        },
+    }
+    return tuple([i*energy/1000 for i in bin_map[particle][energy]])
 

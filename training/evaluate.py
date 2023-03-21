@@ -43,8 +43,13 @@ def get_E_truth(input_file, mode='total'):
 
 def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preprocess=None, suffix=''):
     kin, particle = get_kin(input_file)
-    label_kin = kin_to_label(kin)
+    gan_statistics = -1 # 10000
+    if gan_statistics > 0:
+        unique_vals, counts = np.unique(kin,return_counts=True)
+        kin = np.repeat(unique_vals, np.ones(counts.size, dtype=int) * gan_statistics)
+        kin = kin.reshape(-1,1)
 
+    label_kin = kin_to_label(kin)
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__)
@@ -77,7 +82,7 @@ def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preproce
     elif mode == 'layer':
         vector = E_lay
 
-    categories, vector_list = split_energy(input_file, vector)
+    categories, vector_list = split_energy(kin, vector)
     return categories, vector_list
 
 def plot_energy_layer(particle, model_i, input_file, train_path, eta_slice):
@@ -114,7 +119,9 @@ def plot_energy_layer(particle, model_i, input_file, train_path, eta_slice):
         plot_Etot([''], E_vox_list_merge_energy[ilayer], E_gan_list_merge_energy[ilayer], config=config)
 
 
-def chi2testWW(y1, y1_err, y2, y2_err):
+def chi2testWW(y1, y2):
+    y1_err = np.sqrt(y1)
+    y2_err = np.sqrt(y2)
     zeros = (y1 == 0) * (y2 == 0)
     ndf = y1.size - 1 - zeros.sum()
     if zeros.sum():
@@ -128,6 +135,15 @@ def chi2testWW(y1, y1_err, y2, y2_err):
     sigma = W1 * W1 * y2_err * y2_err + W2 * W2 * y1_err * y1_err
     chi2 = (delta * delta / sigma).sum()
     return chi2, ndf
+
+def chi2caloflow(hist1, hist2):
+    total_counts_ref, total_counts_data = sum(hist1), sum(hist2)
+    hist1_norm = hist1 / total_counts_ref
+    hist2_norm = hist2 / total_counts_data
+    ret = (hist1_norm - hist2_norm)**2
+    sigma_sq = hist1/((total_counts_ref)**2)+hist2/((total_counts_data)**2)
+    ret = np.divide(ret, sigma_sq, out=np.zeros_like(ret), where=sigma_sq!=0)
+    return ret.sum()
 
 def plot_Etot(categories, Etot_list, Egan_list, config=None):
     plot_chi2 = config.get('plot_chi2', False)
@@ -146,7 +162,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
     results = []
     dict([(f'{energy} MeV', 0) for energy in categories])
 
-    ndf_tot = chi2_tot = 0
+    ndf_tot = chi2_tot = chi2_tot_caloflow = 0
     for index, energy in enumerate(categories):
         # Convert energy to GeV
         GeV = 1000
@@ -154,40 +170,49 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
         egan = Egan_list[index] / GeV
 
         ax = axes[index]
-        median = np.median(etot)
-        high = median + min([np.absolute(np.max(etot) - median), np.absolute(np.quantile(etot, q=1-0.05) - median) * plot_range_factor[0], np.absolute(np.quantile(etot, q=1-0.16) - median) * plot_range_factor[1]])
-        low  = median - min([np.absolute(np.min(etot) - median), np.absolute(np.quantile(etot, q=0.05) - median) * plot_range_factor[0], np.absolute(np.quantile(etot, q=1-0.16) - median) * plot_range_factor[1]])
 
-        #logx=False
-        #low = 0
-        #high= 0.1
+        xrange_from_caloflow = True
+        if xrange_from_caloflow:
+            if '$\\gamma$' in config['ax_text']:
+                particle = 'photons'
+            elif '$\\pi$' in config['ax_text']:
+                particle = 'pions'
+            low, high = get_xrange_from_caloflow(particle, energy)
+        else:
+            median = np.median(etot)
+            high = median + min([np.absolute(np.max(etot) - median), np.absolute(np.quantile(etot, q=1-0.05) - median) * plot_range_factor[0], np.absolute(np.quantile(etot, q=1-0.16) - median) * plot_range_factor[1]])
+            low  = median - min([np.absolute(np.min(etot) - median), np.absolute(np.quantile(etot, q=0.05) - median) * plot_range_factor[0], np.absolute(np.quantile(etot, q=1-0.16) - median) * plot_range_factor[1]])
+
         if logx:
             bins = get_bins_given_edges(low if low > 0 else 0.00001, high, nbins, 9, logscale=logx)
         else:
             bins = get_bins_given_edges(low, high, nbins, 3, logscale=logx)
         y_tot, x_tot, _ = ax.hist(np.clip(etot, bins[0], bins[-1]), bins=bins, label='G4', histtype='step', density=False, color='k', linestyle='-', alpha=0.8, linewidth=lw)
         y_gan, x_gan, _ = ax.hist(np.clip(egan, bins[0], bins[-1]), bins=bins, label='GAN', histtype='step', density=False, color='r', linestyle='--', alpha=0.8, linewidth=lw)
-        y_tot_err = np.sqrt(y_tot)
-        y_gan_err = np.sqrt(y_gan)
-        chi2, ndf = chi2testWW(y_tot, y_tot_err, y_gan, y_gan_err)
+        chi2, ndf = chi2testWW(y_tot, y_gan)
+        chi2_caloflow = chi2caloflow(y_tot, y_gan)
         chi2_tot += chi2
+        chi2_tot_caloflow += chi2_caloflow
         ndf_tot += ndf
-        results.append((f'{energy} MeV', chi2/ndf))
+        results.append((f'{energy} MeV_af3', chi2/ndf))
+        results.append((f'{energy} MeV_caloflow', chi2_caloflow/nbins))
         if logx:
             ax.set_xscale('log')
         if logy:
             ax.set_yscale('symlog')
         if plot_chi2:
-            ax.text(0.02, 0.88, "$\chi^2$:{:.1f}".format(chi2 / ndf), transform=ax.transAxes, va="top", ha="left", fontsize=20)
+            ax.text(0.02, 0.88, "$\chi^2$:{:.1f}\n{:.1f}".format(chi2 / ndf, chi2_caloflow / nbins), transform=ax.transAxes, va="top", ha="left", fontsize=20)
 
     handles, labels = ax.get_legend_handles_labels()
 
     chi2_o_ndf = chi2_tot/ndf_tot
-    results.insert(0, (f'All', chi2_o_ndf))
+    chi2_o_ndf_caloflow = chi2_tot_caloflow/(nbins * len(categories))
+    results.insert(0, (f'All_af3', chi2_o_ndf))
+    results.insert(1, (f'All_caloflow', chi2_o_ndf_caloflow))
     ax = axes[-1]
     ax.legend(handles=handles[:2], labels=["Geant4", "GAN"], loc=leg_loc, frameon=False, fontsize=leg_size)
     if plot_chi2:
-        ax.text(ax_pos[0], ax_pos[1], ax_text + "\n$\chi^2$/NDF = {:.0f}/{:.0f}\n= {:.1f}".format(chi2_tot, ndf_tot, chi2_o_ndf), transform=ax.transAxes, fontsize=leg_size)
+        ax.text(ax_pos[0], ax_pos[1], ax_text + "\n$\chi^2$/NDF = {:.0f}/{:.0f}\n= {:.1f}\nAlt $\chi^2$ = {:.1f} ({:.0f})".format(chi2_tot, ndf_tot, chi2_o_ndf, chi2_o_ndf_caloflow, (nbins * len(categories))), transform=ax.transAxes, fontsize=leg_size)
     else:
         ax.text(ax_pos[0], ax_pos[1], ax_text, transform=ax.transAxes, fontsize=leg_size)
     if logx:
@@ -214,7 +239,7 @@ def plot_model_i(args, model_i):
         df = pd.read_csv(df_name)
         if model_i in df['ckpt'].values:
             chi2_results = df[df['ckpt'] == model_i].to_dict(orient='records')[0]
-            print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All'])
+            print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All_af3'])
             return chi2_results
 
     categories, Etot_list = get_E_truth(args.input_file)
@@ -233,7 +258,7 @@ def plot_model_i(args, model_i):
     }
     chi2_results = plot_Etot(categories, Etot_list, Egan_list, config)
     plot_time = time.time() - start_time
-    print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
+    print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All_af3"]:.2f}|{chi2_results["All_caloflow"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
     return {f'ckpt': model_i, **chi2_results}
 
 def chunks(lst, n):
@@ -241,28 +266,29 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def best_ckpt(args, df, cache=False):
+def best_ckpt(args, df, cache=False, alt='_af3', mask_cache=False):
     suffix = '_load' if args.loading else ''
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
-    best_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected')
+    best_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', f'selected{alt}')
     chi_name = os.path.join(best_folder, 'chi2.pdf')
     if not (os.path.exists(chi_name) and cache):
         os.makedirs(best_folder, exist_ok=True)
-        best_x = int(df[df['All'] == df['All'].min()]['ckpt'] * 1000)
-        best_y = float(df['All'].min())
+        best_x = int(df[df[f'All{alt}'] == df[f'All{alt}'].min()]['ckpt'] * 1000)
+        best_y = float(df[f'All{alt}'].min())
         x = df['ckpt'] * 1000
-        y = df['All']
+        y = df[f'All{alt}']
 
-        categories = [int(i.replace(' MeV', '')) for i in df if 'MeV' in i]
-        chi2_list = [df[f'{c} MeV'].values for c in categories]
+        remove = f' MeV{alt}'
+        categories = [int(i.replace(remove, '')) for i in df if remove in i and alt in i]
+        chi2_list = [df[f'{c} MeV{alt}'].values for c in categories]
         fig, axes = plot_frame(categories + ['All energies'], xlabel="Iterations", ylabel="$\chi^{2}$/NDF", add_summary_panel=False)
         for index, energy in enumerate(categories):
             ax = axes[index]
             ax.scatter(x, chi2_list[index], c="k", edgecolors="k", alpha=0.9)
-            best_x_i = int(df[df[f'{energy} MeV'] == df[f'{energy} MeV'].min()]['ckpt'] * 1000)
-            best_y_i = df[f'{energy} MeV'].min()
+            best_x_i = int(df[df[f'{energy} MeV{alt}'] == df[f'{energy} MeV{alt}'].min()]['ckpt'] * 1000)
+            best_y_i = df[f'{energy} MeV{alt}'].min()
             try:
-                best_y_j = float(df[df['ckpt']==int(best_x/1000)][f'{energy} MeV'])
+                best_y_j = float(df[df['ckpt']==int(best_x/1000)][f'{energy} MeV{alt}'])
             except:
                 set_trace()
             ax.scatter(best_x_i, best_y_i, c="orange")
@@ -284,8 +310,8 @@ def best_ckpt(args, df, cache=False):
         fig.clear()
         plt.close(fig)
 
-    csv_name = os.path.join(best_folder, 'chi2.csv')
-    best_df = df[df['All'] == df['All'].min()]
+    csv_name = os.path.join(best_folder, f'chi2{alt}.csv')
+    best_df = df[df[f'All{alt}'] == df[f'All{alt}'].min()]
     if not (os.path.exists(csv_name) and cache):
         best_df.to_csv(csv_name, index=False)
 
@@ -296,7 +322,7 @@ def best_ckpt(args, df, cache=False):
         os.system(f'cp {plot_name} {best_folder}')  
 
     vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"])}_all.pdf')
-    if not (os.path.exists(vox_name) and cache):
+    if not (os.path.exists(vox_name) and mask_cache):
         # Plot 'masking' distribution; 'masking' means to remove voxel energies below a threshold of 1keV or 1MeV
         categories, E_gan_list = get_E_gan(model_i=int(best_df["ckpt"]), input_file=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', suffix=suffix)
         categories, E_tru_list = get_E_truth(args.input_file, mode='voxel')
@@ -313,7 +339,7 @@ def best_ckpt(args, df, cache=False):
         plot_energy_vox(categories, [E_tru_list, E_gan_list], label_list=['Geant4', 'GAN'], kin_list=kin_list, nvox='all', \
                 logx=True, particle=particle, output=vox_name.replace('.pdf', '_normkin_logx.pdf'), draw_ref=False, xlabel="$-$" + f"Log({xlabel})")
     
-    plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
+        plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
 
 
 
@@ -338,7 +364,7 @@ def main(args):
 
     for models in chunks:
         arguments = (repeat(args), models)
-        results = execute_multi_tasks(plot_model_i, *arguments, parallel=-1)
+        results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
         df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
         if os.path.exists(df_name):
@@ -348,6 +374,7 @@ def main(args):
         print('\033[92m[INFO] Save to\033[0m', df_name, df.shape)
 
     best_ckpt(args, df, cache=False)
+    best_ckpt(args, df, cache=False, alt='_caloflow', mask_cache=True)
     
 if __name__ == '__main__':
 
