@@ -43,15 +43,15 @@ def get_E_truth(input_file, mode='total'):
 
 def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preprocess=None, suffix=''):
     kin, particle = get_kin(input_file)
+    config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
+
     gan_statistics = -1 # 10000
     if gan_statistics > 0:
         unique_vals, counts = np.unique(kin,return_counts=True)
         kin = np.repeat(unique_vals, np.ones(counts.size, dtype=int) * gan_statistics)
         kin = kin.reshape(-1,1)
 
-    label_kin = kin_to_label(kin)
-    config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
-
+    label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__)
     E_vox = wgan.predict(model_i=model_i, labels=label_kin)
     if preprocess is not None:
@@ -115,6 +115,7 @@ def plot_energy_layer(particle, model_i, input_file, train_path, eta_slice):
             'nbins': 80,
             'output_name': plot_name,
             'lw': 1,
+            'xrange_from_caloflow': True,
         }
         plot_Etot([''], E_vox_list_merge_energy[ilayer], E_gan_list_merge_energy[ilayer], config=config)
 
@@ -157,6 +158,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
     leg_size = config.get('leg_size', 20)
     nbins = config.get('nbins', 30)
     lw = config.get('lw', 2)
+    xrange_from_caloflow = config.get('xrange_from_caloflow', False)
 
     fig, axes = plot_frame(categories, xlabel="Energy [GeV]", ylabel="Entries")
     results = []
@@ -171,8 +173,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
 
         ax = axes[index]
 
-        xrange_from_caloflow = True
-        if xrange_from_caloflow:
+        if xrange_from_caloflow and energy != '':
             if '$\\gamma$' in config['ax_text']:
                 particle = 'photons'
             elif '$\\pi$' in config['ax_text']:
@@ -255,6 +256,7 @@ def plot_model_i(args, model_i):
         'plot_chi2': True,
         'ax_text': ax_text,
         'output_name': plot_name, 
+        'nbins': 30,
     }
     chi2_results = plot_Etot(categories, Etot_list, Egan_list, config)
     plot_time = time.time() - start_time
@@ -266,7 +268,7 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def best_ckpt(args, df, cache=False, alt='_af3', mask_cache=False):
+def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     suffix = '_load' if args.loading else ''
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
     best_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', f'selected{alt}')
@@ -356,7 +358,7 @@ def main(args):
     else:
         print('\033[92m[INFO] Evaluate\033[0m', particle, args.input_file, f'| {len(models)} models')
 
-    if args.local:
+    if args.checkpoint:
         size = 100
         chunks = [models[x:x+size] for x in range(0, len(models), size)]
     else:
@@ -374,7 +376,7 @@ def main(args):
         print('\033[92m[INFO] Save to\033[0m', df_name, df.shape)
 
     best_ckpt(args, df, cache=False)
-    best_ckpt(args, df, cache=False, alt='_caloflow', mask_cache=True)
+    #best_ckpt(args, df, cache=False, alt='_caloflow', mask_cache=True)
     
 if __name__ == '__main__':
 
@@ -385,7 +387,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--eta_slice', type=str, required=False, default='20_25', help='--out_path from train.py (default: %(default)s)')
     parser.add_argument('--debug', required=False, action='store_true', help='Debug mode (default: %(default)s)')
     parser.add_argument('-p', '--preprocess', type=str, required=False, default=None, help='Preprocessing name (default: %(default)s)')
-    parser.add_argument('--local', required=False, action='store_true', help='Split evaluation into chunks (default: %(default)s)')
+    parser.add_argument('--checkpoint', required=False, action='store_true', help='Split evaluation into chunks (default: %(default)s)')
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
 
     args = parser.parse_args()

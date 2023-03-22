@@ -1,4 +1,5 @@
 import numpy as np
+np.set_printoptions(suppress=True)
 import h5py, os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -33,10 +34,50 @@ def particle_mass(particle=None):
         mass = 938.27
     return mass
 
-def kin_to_label(kin):
+def kin_to_label(kin, scheme='log_ratio'):
     kin_min = np.min(kin)
     kin_max = np.max(kin)
-    return np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
+    if scheme == 'log_ratio':
+        label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
+    elif scheme == 'split_at_12_18':
+        def sigmoid_factor(x): # to smooth the labels around the cut values
+            return 1 / (1 + np.exp(-x))
+        label = np.log2(kin)
+        label -= ( np.min(label) -1 ) # convert labels to integer-like starting from 1.0
+        raise_step = 10
+        raise_speed = 5
+
+        # real labels will be [0.1, 0.2, ..., 0.5, 6, 7, ..., 11, 120, 130, ...]
+        for i, cut in enumerate([5, 11]):
+            label = np.where(label > cut * np.power(raise_step, (i)), label*raise_step*sigmoid_factor(raise_speed*(label-cut)), label)
+        label /= 10
+    elif scheme == 'split_at_18':
+        def sigmoid_factor(x): # to smooth the labels around the cut values
+            return 1 / (1 + np.exp(-x))
+        label = np.log2(kin)
+        label -= ( np.min(label) -1 ) # convert labels to integer-like starting from 1.0
+        raise_step = 10
+        raise_speed = 5
+
+        # real labels will be [0.1, 0.2, ..., 1.1, 120, 130, ...]
+        for i, cut in enumerate([11]):
+            label = np.where(label > cut * np.power(raise_step, (i)), label*raise_step*sigmoid_factor(raise_speed*(label-cut)), label)
+        label /= 10
+    elif scheme == 'split_at_12':
+        def sigmoid_factor(x): # to smooth the labels around the cut values
+            return 1 / (1 + np.exp(-x))
+        label = np.log2(kin)
+        label -= ( np.min(label) -1 ) # convert labels to integer-like starting from 1.0
+        raise_step = 10
+        raise_speed = 5
+
+        # real labels will be [0.1, 0.2, ..., 0.5, 6, 7, ...]
+        for i, cut in enumerate([5]):
+            label = np.where(label > cut * np.power(raise_step, (i)), label*raise_step*sigmoid_factor(raise_speed*(label-cut)), label)
+        label /= 10
+    else:
+        raise NotImplementedError(f'{scheme} is not implemented in common.py')
+    return label
 
 def get_kin(input_file):
     particle = input_file.split('/')[-1].split('_')[-2][:-1]

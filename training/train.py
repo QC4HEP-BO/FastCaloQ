@@ -100,7 +100,14 @@ def main(args):
     
     energies = get_energies(input_file)
     kin, particle = get_kin(input_file)
-    label_kin = kin_to_label(kin)
+    if args.label_scheme:
+        label_scheme = args.label_scheme
+    else:
+        label_scheme = {
+        'photon': 'split_at_12_18',
+        'pion': 'log_ratio',
+        }[particle]
+    label_kin = kin_to_label(kin, scheme=label_scheme)
     
     X_train = photon_file['showers'][:]
     if args.mask is not None:
@@ -140,6 +147,7 @@ def main(args):
             'generatorLayers': [50, 100, 200],
             'nvoxels': X_train.shape[1],
             'use_bias': True,
+            'label_scheme': label_scheme,
         }
     else: # pion
         hp_config = {
@@ -161,6 +169,7 @@ def main(args):
             'nvoxels': X_train.shape[1],
             'use_bias': True,
             'preprocess': args.preprocess,
+            'label_scheme': label_scheme,
         }
     if args.config:
         from quickstats.utils.common_utils import combine_dict
@@ -204,6 +213,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--preprocess', type=str, required=False, default=None, help='Preprocessing name (default: %(default)s)')
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
     parser.add_argument('--add_noise', required=False, action='store_true', help='Add noise (default: %(default)s)')
+    parser.add_argument('--label_scheme', type=str, required=False, default='log_ratio', help='Label scheme defined in common.py (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)
