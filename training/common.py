@@ -8,8 +8,10 @@ from pdb import set_trace
 def particle_latex_name(particle):
     return {'photon': r"$\gamma$",
             'photons': r"$\gamma$",
+            'electrons': r"$e$",
             'pion': r"$\pi$",
             'pions': r"$\pi$",
+            'electron': r"$e$",
             }[particle]
 
 def get_best_mode_i(train_path, particle, eta_slice='20_25'):
@@ -83,9 +85,9 @@ def kin_to_label(kin, scheme='log_ratio'):
 
 def get_kin(input_file):
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
-    photon_file = h5py.File(f'{input_file}', 'r')
+    input_file = h5py.File(f'{input_file}', 'r')
     mass = particle_mass(particle)
-    energies = photon_file['incident_energies'][:]
+    energies = input_file['incident_energies'][:]
     kin = np.sqrt( np.square(energies) + np.square(mass) ) - mass
     return kin, particle
 
@@ -106,9 +108,9 @@ def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=T
         length = len(categories)
         width = int(np.ceil(np.sqrt(length)))
         height = int(np.ceil(length / width))
-        fig, axes = plt.subplots(nrows=width, ncols=height, figsize=(4*width, 4*height))
+        fig, axes = plt.subplots(nrows=height, ncols=width, figsize=(4*width, 4*height))
         for index, energy in enumerate(categories):
-            ax = axes[(index) // 4, (index) % 4]
+            ax = axes[(index) // width, (index) % width]
             ax.tick_params(axis="both", which="major", width=1, length=6, labelsize=10, direction="in")
             ax.tick_params(axis="both", which="minor", width=0.5, length=3, labelsize=10, direction="in")
             ax.minorticks_on()
@@ -127,17 +129,18 @@ def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=T
                 ax.set_ylabel(ylabel)
         return fig, axes.flatten()
 
-def get_energies(input_file):
-    photon_file = h5py.File(f'{input_file}', 'r')
-    energies = photon_file['incident_energies'][:]
+def get_energies(input_file, label=False):
+    input_file = h5py.File(f'{input_file}', 'r')
+    energies = input_file['incident_energies'][:]
     if np.all(np.mod(energies, 1) == 0):
         energies = energies.astype(int)
     else:
-        raise ValueError
+        if label == True: # when energies are not integral (dataset 2&3 in calochallenge, return digitised labels
+            return np.log2(energies).astype(int)
     return energies
 
 def get_counts(input_file):
-    energies = get_energies(input_file)
+    energies = get_energies(input_file, label = True)
     categories = np.unique(energies)
 
     counts = [np.count_nonzero(energies == c) for c in categories]
@@ -160,13 +163,15 @@ def _split_energy(input_file, vector):
     '''
     if isinstance(input_file, str):
         energies = get_energies(input_file)
+        energies_label = get_energies(input_file, label=True)
         categories, counts = get_counts(input_file)
     else: # for GAN predict more statistics than the Geant size
         energies = input_file
+        energies_label = input_file
         unique_vals = np.unique(input_file)
         categories = unique_vals.astype(int)
 
-    joint_array = np.concatenate([energies, vector], axis=1)
+    joint_array = np.concatenate([energies_label, vector], axis=1)
     joint_array = joint_array[joint_array[:, 0].argsort()]
     vector_list = np.split(joint_array[:,1:], np.unique(joint_array[:, 0], return_index=True)[1][1:])
     return categories, vector_list
@@ -271,6 +276,23 @@ def get_xrange_from_caloflow(particle, energy):
             1048576 : [0.5, 1.15] ,
             2097152 : [0.62, 1.1] ,
             4194304 : [0.8, 1.0] ,
+        },
+        'electrons': {
+            256     : [0, 2.09],
+            512     : [0.0037, 1.74],
+            1024    : [0.5, 1.26],
+            2048    : [0.7, 1.2],
+            4096    : [0.82, 1.15],
+            8192    : [0.78, 1.08],
+            16384   : [0.85, 1.03],
+            32768   : [0.92, 1.02],
+            65536   : [0.9, 1.01],
+            131072  : [0.88, 1.0],
+            262144  : [0.88, 1.0],
+            524288  : [0.9, 0.998],
+            1048576 : [0.89, 0.995],
+            2097152 : [0.9, 0.99],
+            4194304 : [0.89, 0.988],
         },
     }
     return tuple([i*energy/1000 for i in bin_map[particle][energy]])

@@ -19,15 +19,15 @@ from pdb import set_trace
 def get_E_truth(input_file, mode='total'):
     # creating instance of HighLevelFeatures class to handle geometry based on binning file
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
-    photon_file = h5py.File(f'{input_file}', 'r')
+    input_file = h5py.File(f'{input_file}', 'r')
 
     hlf = HighLevelFeatures(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
-    hlf.CalculateFeatures(photon_file['showers'][:])
+    hlf.CalculateFeatures(input_file['showers'][:])
 
     if mode == 'total':
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
-        E_vox = photon_file['showers'][:]
+        E_vox = input_file['showers'][:]
     elif mode == 'layer':
         E_lay = hlf.GetElayers()
 
@@ -70,8 +70,8 @@ def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preproce
     if mode == 'total':
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
-        photon_file = h5py.File(f'{input_file}', 'r')
-        E_vox = photon_file['showers'][:]
+        input_file = h5py.File(f'{input_file}', 'r')
+        E_vox = input_file['showers'][:]
     elif mode == 'layer':
         E_lay = hlf.GetElayers()
 
@@ -178,6 +178,8 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
                 particle = 'photons'
             elif '$\\pi$' in config['ax_text']:
                 particle = 'pions'
+            elif '$e $' in config['ax_text']:
+                particle = 'electrons'
             low, high = get_xrange_from_caloflow(particle, energy)
         else:
             median = np.median(etot)

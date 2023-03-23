@@ -1,0 +1,49 @@
+#Agent jdl file
+Universe        = vanilla
+Notification    = Never
+initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
+Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
+GetEnv          = True
+Error           = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).err
+Log             = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).log
+Output          = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).out
+notify_user     = rui.zhang@cern.ch
+notification    = always
+stream_output   = False
+stream_error    = False
+Requirements = ((Arch == "X86_64") && (regexp("CentOS7",OpSysAndVer)))
+WhenToTransferOutput = ON_EXIT_OR_EVICT
+OnExitRemove         = TRUE
++JobFlavour = "testmatch"
++JobType="training"
+request_GPUs = 1
+request_CPUs = 4
+Request_memory = 8 GB
+Request_disk   = 4 GB
+
+###         task=$1         input=$2                         output=model_config
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo101-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo102-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo103-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo104-M1
+#Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo105-M1
+Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo106-M1
+Queue 1
+
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo101-M1
+Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo102-M1
+Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo103-M1
+Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo104-M1
+Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo105-M1
+Queue 1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo106-M1
+Queue 1

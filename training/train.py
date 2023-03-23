@@ -96,7 +96,7 @@ def main(args):
     print('\033[92m[INFO] Run\033[0m', particle, input_file)
     
     # loading the .hdf5 datasets
-    photon_file = h5py.File(f'{input_file}', 'r')
+    input_data = h5py.File(f'{input_file}', 'r')
     
     energies = get_energies(input_file)
     kin, particle = get_kin(input_file)
@@ -106,10 +106,11 @@ def main(args):
         label_scheme = {
         'photon': 'split_at_12_18',
         'pion': 'log_ratio',
+        'electron': 'log_ratio',
         }[particle]
     label_kin = kin_to_label(kin, scheme=label_scheme)
     
-    X_train = photon_file['showers'][:]
+    X_train = input_data['showers'][:]
     if args.mask is not None:
         if args.mask < 0:
             mask = list(np.unique(energies)/256 * abs(args.mask)) # E/256 * (-mask)
@@ -149,7 +150,7 @@ def main(args):
             'use_bias': True,
             'label_scheme': label_scheme,
         }
-    else: # pion
+    elif 'pion' in particle: # pion
         hp_config = {
             'model': args.model if args.model else 'noBN',
             'G_size': 1,
@@ -169,6 +170,28 @@ def main(args):
             'nvoxels': X_train.shape[1],
             'use_bias': True,
             'preprocess': args.preprocess,
+            'label_scheme': label_scheme,
+        }
+    elif 'electron': # dataset2 electron
+        hp_config = {
+            'model': args.model if args.model else 'BNswish',
+            'G_size': 1,
+            'D_size': 1,
+            'optimizer': 'adam',
+            'G_lr': 1E-4,
+            'D_lr': 1E-4,
+            'G_beta1': 0.5,
+            'G_beta1': 0.5,
+            'batchsize': 1024,
+            'datasize': X_train.shape[0],
+            'dgratio': 8,
+            'latent_dim': 50,
+            'lam': 3,
+            'conditional_dim': label_kin.shape[1],
+            'generatorLayers': [200, 400, 800],
+            'discriminatorLayers': [800, 400, 200],
+            'nvoxels': X_train.shape[1],
+            'use_bias': True,
             'label_scheme': label_scheme,
         }
     if args.config:
