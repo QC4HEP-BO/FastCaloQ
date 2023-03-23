@@ -164,7 +164,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
     results = []
     dict([(f'{energy} MeV', 0) for energy in categories])
 
-    ndf_tot = chi2_tot = chi2_tot_caloflow = 0
+    ndf_tot = chi2_tot = 0
     for index, energy in enumerate(categories):
         # Convert energy to GeV
         GeV = 1000
@@ -191,29 +191,24 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
         y_tot, x_tot, _ = ax.hist(np.clip(etot, bins[0], bins[-1]), bins=bins, label='G4', histtype='step', density=False, color='k', linestyle='-', alpha=0.8, linewidth=lw)
         y_gan, x_gan, _ = ax.hist(np.clip(egan, bins[0], bins[-1]), bins=bins, label='GAN', histtype='step', density=False, color='r', linestyle='--', alpha=0.8, linewidth=lw)
         chi2, ndf = chi2testWW(y_tot, y_gan)
-        chi2_caloflow = chi2caloflow(y_tot, y_gan)
         chi2_tot += chi2
-        chi2_tot_caloflow += chi2_caloflow
         ndf_tot += ndf
-        results.append((f'{energy} MeV_af3', chi2/ndf))
-        results.append((f'{energy} MeV_caloflow', chi2_caloflow/nbins))
+        results.append((f'{energy} MeV', chi2/ndf))
         if logx:
             ax.set_xscale('log')
         if logy:
             ax.set_yscale('symlog')
         if plot_chi2:
-            ax.text(0.02, 0.88, "$\chi^2$:{:.1f}\n{:.1f}".format(chi2 / ndf, chi2_caloflow / nbins), transform=ax.transAxes, va="top", ha="left", fontsize=20)
+            ax.text(0.02, 0.88, "$\chi^2$:{:.1f}".format(chi2 / ndf), transform=ax.transAxes, va="top", ha="left", fontsize=20)
 
     handles, labels = ax.get_legend_handles_labels()
 
     chi2_o_ndf = chi2_tot/ndf_tot
-    chi2_o_ndf_caloflow = chi2_tot_caloflow/(nbins * len(categories))
-    results.insert(0, (f'All_af3', chi2_o_ndf))
-    results.insert(1, (f'All_caloflow', chi2_o_ndf_caloflow))
+    results.insert(0, (f'All', chi2_o_ndf))
     ax = axes[-1]
     ax.legend(handles=handles[:2], labels=["Geant4", "GAN"], loc=leg_loc, frameon=False, fontsize=leg_size)
     if plot_chi2:
-        ax.text(ax_pos[0], ax_pos[1], ax_text + "\n$\chi^2$/NDF = {:.0f}/{:.0f}\n= {:.1f}\nAlt $\chi^2$ = {:.1f} ({:.0f})".format(chi2_tot, ndf_tot, chi2_o_ndf, chi2_o_ndf_caloflow, (nbins * len(categories))), transform=ax.transAxes, fontsize=leg_size)
+        ax.text(ax_pos[0], ax_pos[1], ax_text + "\n$\chi^2$/NDF = {:.0f}/{:.0f}\n= {:.1f}".format(chi2_tot, ndf_tot, chi2_o_ndf), transform=ax.transAxes, fontsize=leg_size)
     else:
         ax.text(ax_pos[0], ax_pos[1], ax_text, transform=ax.transAxes, fontsize=leg_size)
     if logx:
@@ -240,7 +235,7 @@ def plot_model_i(args, model_i):
         df = pd.read_csv(df_name)
         if model_i in df['ckpt'].values:
             chi2_results = df[df['ckpt'] == model_i].to_dict(orient='records')[0]
-            print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All_af3'])
+            print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All'])
             return chi2_results
 
     categories, Etot_list = get_E_truth(args.input_file)
@@ -260,7 +255,7 @@ def plot_model_i(args, model_i):
     }
     chi2_results = plot_Etot(categories, Etot_list, Egan_list, config)
     plot_time = time.time() - start_time
-    print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All_af3"]:.2f}|{chi2_results["All_caloflow"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
+    print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
     return {f'ckpt': model_i, **chi2_results}
 
 def chunks(lst, n):
@@ -376,7 +371,6 @@ def main(args):
         print('\033[92m[INFO] Save to\033[0m', df_name, df.shape)
 
     best_ckpt(args, df, cache=False)
-    #best_ckpt(args, df, cache=False, alt='_caloflow', mask_cache=True)
     
 if __name__ == '__main__':
 

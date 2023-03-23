@@ -75,6 +75,8 @@ def kin_to_label(kin, scheme='log_ratio'):
         for i, cut in enumerate([5]):
             label = np.where(label > cut * np.power(raise_step, (i)), label*raise_step*sigmoid_factor(raise_speed*(label-cut)), label)
         label /= 10
+    elif scheme == 'index':
+        label = np.log2(kin/kin_min) + 1
     else:
         raise NotImplementedError(f'{scheme} is not implemented in common.py')
     return label
