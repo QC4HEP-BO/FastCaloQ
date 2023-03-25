@@ -44,11 +44,11 @@ def get_E_truth(input_file_name, mode='total'):
     elif mode == 'layer':
         vector = E_lay
 
-    categories, vector_list = split_energy(input_file, vector)
+    categories, vector_list = split_energy(input_file_name, vector)
     return categories, vector_list
 
-def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preprocess=None, suffix=''):
-    kin, particle = get_kin(input_file)
+def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix=''):
+    kin, particle = get_kin(input_file_name)
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
     gan_statistics = -1 # 10000
@@ -70,13 +70,19 @@ def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preproce
     else:
         E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True)
 
-    hlf = HighLevelFeatures(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
+    if 'dataset1' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml'
+    elif 'dataset2' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_2.xml'
+    elif 'dataset3' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
+    hlf = HighLevelFeatures(particle, filename=binning_xml)
     hlf.CalculateFeatures(np.array(E_vox))
 
     if mode == 'total':
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
-        input_file = h5py.File(f'{input_file}', 'r')
+        input_file = h5py.File(f'{input_file_name}', 'r')
         E_vox = input_file['showers'][:]
     elif mode == 'layer':
         E_lay = hlf.GetElayers()
@@ -91,15 +97,15 @@ def get_E_gan(model_i, input_file, train_path, eta_slice, mode='total', preproce
     categories, vector_list = split_energy(kin, vector)
     return categories, vector_list
 
-def plot_energy_layer(particle, model_i, input_file, train_path, eta_slice):
+def plot_energy_layer(particle, model_i, input_file_name, train_path, eta_slice):
 
     def merge_energies(E_list):
         concate = np.concatenate(E_list, axis=0)
         return [concate.flatten()]
 
     suffix = '_load' if args.loading else ''
-    categories1, E_gan_list = get_E_gan(model_i, input_file=input_file, train_path=train_path, eta_slice=eta_slice, mode='layer', suffix=suffix)
-    categories2, E_vox_list = get_E_truth(input_file, mode='layer')
+    categories1, E_gan_list = get_E_gan(model_i, input_file=input_file_name, train_path=train_path, eta_slice=eta_slice, mode='layer', suffix=suffix)
+    categories2, E_vox_list = get_E_truth(input_file_name, mode='layer')
 
     E_vox_list_merge_energy, E_gan_list_merge_energy = {}, {}
     for ilayer in E_vox_list:
@@ -249,7 +255,7 @@ def plot_model_i(args, model_i):
     categories, Etot_list = get_E_truth(args.input_file)
     truth_time = time.time() - start_time
     start_time = time.time()
-    categories, Egan_list = get_E_gan(model_i=model_i, input_file=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix)
+    categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix)
     gan_time = time.time() - start_time
     start_time = time.time()
 
