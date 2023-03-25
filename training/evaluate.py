@@ -16,12 +16,18 @@ from data import *
 import re
 from pdb import set_trace
 
-def get_E_truth(input_file, mode='total'):
+def get_E_truth(input_file_name, mode='total'):
     # creating instance of HighLevelFeatures class to handle geometry based on binning file
-    particle = input_file.split('/')[-1].split('_')[-2][:-1]
-    input_file = h5py.File(f'{input_file}', 'r')
+    particle = input_file_name.split('/')[-1].split('_')[-2][:-1]
+    input_file = h5py.File(f'{input_file_name}', 'r')
 
-    hlf = HighLevelFeatures(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
+    if 'dataset1' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml'
+    elif 'dataset2' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_2.xml'
+    elif 'dataset3' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
+    hlf = HighLevelFeatures(particle, filename=binning_xml)
     hlf.CalculateFeatures(input_file['showers'][:])
 
     if mode == 'total':
