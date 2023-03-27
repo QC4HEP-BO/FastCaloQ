@@ -30,20 +30,31 @@ Request_disk   = 4 GB
 #Queue 1
 #Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo104-M1
 #Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo105-M1
-Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo106-M1
-Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo105-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo106-M1
+#Queue 1
+#
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo101-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo102-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo103-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo104-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo105-M1
+#Queue 1
+#Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo106-M1
+#Queue 1
 
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo101-M1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo107-M1
 Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo102-M1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo108-M1
 Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo103-M1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo109-M1
 Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo104-M1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo110-M1
 Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo105-M1
-Queue 1
-Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo106-M1
+Arguments = train ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo111-M1
 Queue 1

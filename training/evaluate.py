@@ -335,7 +335,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"])}_all.pdf')
     if not (os.path.exists(vox_name) and mask_cache):
         # Plot 'masking' distribution; 'masking' means to remove voxel energies below a threshold of 1keV or 1MeV
-        categories, E_gan_list = get_E_gan(model_i=int(best_df["ckpt"]), input_file=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', suffix=suffix)
+        categories, E_gan_list = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', suffix=suffix)
         categories, E_tru_list = get_E_truth(args.input_file, mode='voxel')
         kin, particle = get_kin(args.input_file)
         categories, kin_list = split_energy(args.input_file, kin)

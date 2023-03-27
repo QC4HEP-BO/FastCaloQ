@@ -165,11 +165,10 @@ def _split_energy(input_file, vector):
         energies = get_energies(input_file)
         energies_label = get_energies(input_file, label=True)
         categories, counts = get_counts(input_file)
-    else: # for GAN predict more statistics than the Geant size
+    else: # for GAN evaluation: predict more statistics than the Geant size
         energies = input_file
-        energies_label = input_file
-        unique_vals = np.unique(input_file)
-        categories = unique_vals.astype(int)
+        energies_label = np.log2(input_file).astype(int)
+        categories = np.unique(energies_label)
 
     joint_array = np.concatenate([energies_label, vector], axis=1)
     joint_array = joint_array[joint_array[:, 0].argsort()]
