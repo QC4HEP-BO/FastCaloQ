@@ -30,5 +30,7 @@ Request_disk   = 4 GB
 #Queue 1
 #Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.4-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
 #Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNReLU_hpo4-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNReLU_hpo4-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
+#Queue 1
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lindex --loading=../output/dataset1/v2/BNswish_hpo4-M1-P-Lindex/photons_eta_20_25/selected/model-974
 Queue 1

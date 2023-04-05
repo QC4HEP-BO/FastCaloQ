@@ -12,12 +12,14 @@ loading=$4
 
 model=`echo $output | cut -d '_' -f 1`
 config_mask=`echo $output | cut -d '_' -f 2-1000`
+config_mask=`echo $config_mask | cut -d '.' -f 1`
 config=`echo $config_mask | cut -d '-' -f 1`
 mask=`echo $config_mask | cut -d '-' -f 2 | cut -d 'M' -f 2`
 prep=`echo $config_mask | cut -d '-' -f 3 | cut -d 'P' -f 2`
 label_scheme=`echo $config_mask | cut -d '-' -f 4 | cut -d 'L' -f 2`
 echo input=$input
 echo output=$output
+echo mask=$mask
 echo prep=$prep
 echo loading=$loading
 echo label_scheme=$label_scheme

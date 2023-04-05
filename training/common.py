@@ -83,12 +83,24 @@ def kin_to_label(kin, scheme='log_ratio'):
         raise NotImplementedError(f'{scheme} is not implemented in common.py')
     return label
 
-def get_kin(input_file):
+def get_energies(input_file, label=False):
+    input_file = h5py.File(f'{input_file}', 'r')
+    energies = input_file['incident_energies'][:]
+    if np.all(np.mod(energies, 1) == 0):
+        energies = energies.astype(int)
+    else:
+        if label == True: # when energies are not integral (dataset 2&3 in calochallenge, return digitised labels
+            return np.log2(energies).astype(int)
+    return energies
+
+def get_kin(input_file, label = False):
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
     input_file = h5py.File(f'{input_file}', 'r')
     mass = particle_mass(particle)
     energies = input_file['incident_energies'][:]
     kin = np.sqrt( np.square(energies) + np.square(mass) ) - mass
+    if label == True: # when energies are not integral (dataset 2&3 in calochallenge, return digitised labels
+        return np.log2(energies).astype(int)
     return kin, particle
 
 def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=True):
@@ -129,18 +141,8 @@ def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=T
                 ax.set_ylabel(ylabel)
         return fig, axes.flatten()
 
-def get_energies(input_file, label=False):
-    input_file = h5py.File(f'{input_file}', 'r')
-    energies = input_file['incident_energies'][:]
-    if np.all(np.mod(energies, 1) == 0):
-        energies = energies.astype(int)
-    else:
-        if label == True: # when energies are not integral (dataset 2&3 in calochallenge, return digitised labels
-            return np.log2(energies).astype(int)
-    return energies
-
 def get_counts(input_file):
-    energies = get_energies(input_file, label = True)
+    energies = get_kin(input_file, label = True)
     categories = np.unique(energies)
 
     counts = [np.count_nonzero(energies == c) for c in categories]
@@ -162,15 +164,16 @@ def _split_energy(input_file, vector):
         Output: a list of vectors splitted by energies, and the energies
     '''
     if isinstance(input_file, str):
-        energies = get_energies(input_file)
-        energies_label = get_energies(input_file, label=True)
+        #energies = get_energies(input_file)
+        kin_label = get_kin(input_file, label=True)
         categories, counts = get_counts(input_file)
     else: # for GAN evaluation: predict more statistics than the Geant size
-        energies = input_file
-        energies_label = np.log2(input_file).astype(int)
-        categories = np.unique(energies_label)
+        #energies = input_file
+        #kin_label = np.log2(input_file).astype(int)
+        kin_label = input_file
+        categories = np.unique(kin_label)
 
-    joint_array = np.concatenate([energies_label, vector], axis=1)
+    joint_array = np.concatenate([kin_label, vector], axis=1)
     joint_array = joint_array[joint_array[:, 0].argsort()]
     vector_list = np.split(joint_array[:,1:], np.unique(joint_array[:, 0], return_index=True)[1][1:])
     return categories, vector_list
