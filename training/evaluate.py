@@ -249,6 +249,12 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
         plt.close(fig)
     return dict(results)
 
+def normalise_energy(Etot_list, Egan_list):
+    Egan_list_new = []
+    for Etot, Egan in zip(Etot_list, Egan_list):
+        Egan_list_new.append(Egan / Etot)
+    return Egan_list_new
+
 def plot_model_i(args, model_i):
     start_time = time.time()
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
@@ -266,6 +272,9 @@ def plot_model_i(args, model_i):
     truth_time = time.time() - start_time
     start_time = time.time()
     categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix)
+    if args.normalise:
+        Egan_list = normalise_energy(Etot_list, Egan_list)
+        Etot_list = normalise_energy(Etot_list, Etot_list)
     gan_time = time.time() - start_time
     start_time = time.time()
 
@@ -424,6 +433,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--preprocess', type=str, required=False, default=None, help='Preprocessing name (default: %(default)s)')
     parser.add_argument('--checkpoint', required=False, action='store_true', help='Split evaluation into chunks (default: %(default)s)')
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
+    parser.add_argument('--normalise', required=False, action='store_true', help='Plot E_gan/E_truth (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)
