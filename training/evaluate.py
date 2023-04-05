@@ -202,7 +202,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
                 particle = 'pions'
             elif '$e $' in config['ax_text']:
                 particle = 'electrons'
-            low, high = get_xrange_from_caloflow(particle, energy)
+            low, high = get_xrange_from_caloflow(particle, energy, args.normalise)
         else:
             median = np.median(etot)
             high = median + min([np.absolute(np.max(etot) - median), np.absolute(np.quantile(etot, q=1-0.05) - median) * plot_range_factor[0], np.absolute(np.quantile(etot, q=1-0.16) - median) * plot_range_factor[1]])

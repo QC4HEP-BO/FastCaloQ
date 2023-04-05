@@ -242,7 +242,7 @@ def get_bins_given_edges(low_edge:float, high_edge:float, nbins:int, decimals:in
         bins = np.around(np.linspace(low_bin_center, high_bin_center, nbins), decimals)
     return bins
 
-def get_xrange_from_caloflow(particle, energy):
+def get_xrange_from_caloflow(particle, energy, normalise=False):
 
     bin_map = {
         'photons': {
@@ -297,5 +297,7 @@ def get_xrange_from_caloflow(particle, energy):
             4194304 : [0.89, 0.988],
         },
     }
+    if normalise:
+        return tuple([i for i in bin_map[particle][energy]])
     return tuple([i*energy/1000 for i in bin_map[particle][energy]])
 
