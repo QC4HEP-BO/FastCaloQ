@@ -437,6 +437,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint', required=False, action='store_true', help='Split evaluation into chunks (default: %(default)s)')
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
     parser.add_argument('--normalise', required=False, action='store_true', help='Plot E_gan/E_truth (default: %(default)s)')
+    parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Load model (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)

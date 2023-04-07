@@ -113,7 +113,7 @@ def filter_energy(particle, incident_energies, split_energy_position, X_train):
             positions = (np.power(2,12), np.power(2,18))
             mask = (incident_energies >= positions[0]) & (incident_energies <= positions[1])
         elif split_energy_position == 'ge18':
-            positions = (np.power(2,18), , max(incident_energies)*2)
+            positions = (np.power(2,18), max(incident_energies)*2)
             mask = (incident_energies >= positions[0]) & (incident_energies <= positions[1])
         else:
             assert(0)

@@ -217,7 +217,7 @@ def main(args):
         with open(f'{wgan.train_folder}/scale_{args.preprocess}.json', 'w') as fp:
             json.dump(scale, fp, indent=2)
     plot_input(args, X_train, output=wgan.train_folder)
-    set_trace()
+    print('\033[92m[INFO] Training size\033[0m', X_train.shape, 'kinematic and counts:', np.unique(kin,return_counts=True))
     wgan.train(X_train, label_kin)
 
 def plot_input(args, X_train, output):

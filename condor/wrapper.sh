@@ -64,6 +64,6 @@ else
     command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint --normalise ${evaluate_addition}"
 fi
 echo $command
-#$command
+$command
 cd -
 unset mask prep config config_mask model train_addition evaluate_addition loading label_scheme ds
