@@ -98,3 +98,27 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None):
             raise NotImplementedError
     return X_train
 
+def filter_energy(particle, incident_energies, split_energy_position, X_train):
+    if split_energy_position == '' or split_energy_position is None:
+        return X_train
+
+    if 'photon' in particle:
+        if split_energy_position == 'le12':
+            positions = (-1, np.power(2,12))
+            mask = (incident_energies >= positions[0]) & (incident_energies <= positions[1])
+        elif split_energy_position == 'ge12':
+            positions = (np.power(2,12), max(incident_energies)*2)
+            mask = (incident_energies >= positions[0]) & (incident_energies <= positions[1])
+        elif split_energy_position == 'ge12le18':
+            positions = (np.power(2,12), np.power(2,18))
+            mask = (incident_energies >= positions[0]) & (incident_energies <= positions[1])
+        elif split_energy_position == 'ge18':
+            positions = (np.power(2,18), , max(incident_energies)*2)
+            mask = (incident_energies >= positions[0]) & (incident_energies <= positions[1])
+        else:
+            assert(0)
+    else:
+        pass
+
+    X_train = X_train[mask.flatten()]
+    return X_train

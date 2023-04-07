@@ -17,12 +17,15 @@ config=`echo $config_mask | cut -d '-' -f 1`
 mask=`echo $config_mask | cut -d '-' -f 2 | cut -d 'M' -f 2`
 prep=`echo $config_mask | cut -d '-' -f 3 | cut -d 'P' -f 2`
 label_scheme=`echo $config_mask | cut -d '-' -f 4 | cut -d 'L' -f 2`
+split_energy=`echo $config_mask | cut -d '-' -f 5 | cut -d 'S' -f 2`
+
 echo input=$input
 echo output=$output
 echo mask=$mask
 echo prep=$prep
 echo loading=$loading
 echo label_scheme=$label_scheme
+echo split_energy=$split_energy
 
 if [[ $mask == ?(n)+([0-9]) ]]; then
     version='v2'
@@ -49,6 +52,10 @@ if [[ ! -z "$label_scheme" ]]; then
     train_addition="$train_addition --label_scheme $label_scheme"
 fi
 
+if [[ ! -z "$split_energy" ]]; then
+    train_addition="$train_addition --split_energy_position $split_energy"
+fi
+
 ds=`echo $input | grep -oP '(?<=input/dataset).'`
 
 if [[ ${task} == *'train'* ]]; then
@@ -57,6 +64,6 @@ else
     command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint --normalise ${evaluate_addition}"
 fi
 echo $command
-$command
+#$command
 cd -
 unset mask prep config config_mask model train_addition evaluate_addition loading label_scheme ds

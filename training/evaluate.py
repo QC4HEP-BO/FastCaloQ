@@ -28,15 +28,16 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False):
     elif 'dataset3' in input_file_name:
         binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
 
+    X_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['showers'][:])
     if mode == 'total':
         hlf = HighLevelFeatures(particle, filename=binning_xml)
-        hlf.CalculateFeatures(input_file['showers'][:])
+        hlf.CalculateFeatures(X_train)
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
-        E_vox = input_file['showers'][:]
+        E_vox = X_train
     elif mode == 'layer':
         hlf = HighLevelFeatures(particle, filename=binning_xml)
-        hlf.CalculateFeatures(input_file['showers'][:])
+        hlf.CalculateFeatures(X_train)
         E_lay = hlf.GetElayers()
 
     if mode == 'total':
@@ -53,9 +54,11 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False):
 
 def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False):
     kin, particle = get_kin(input_file_name)
+    input_file = h5py.File(f'{input_file_name}', 'r')
+    kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
-    gan_statistics = -1 # 10000
+    gan_statistics = -1 # -1 means the same statistics as input training, alternatively can use 10000 for every energy point, but this is found to be unstable in terms of chi2 values
     if gan_statistics > 0:
         unique_vals, counts = np.unique(kin,return_counts=True)
         kin = np.repeat(unique_vals, np.ones(counts.size, dtype=int) * gan_statistics)

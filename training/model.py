@@ -194,6 +194,18 @@ class WGANGP:
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
             G = layers.LeakyReLU(alpha=0)(G)
+        elif self.model == "BNLeakyReLU2":
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.LeakyReLU(alpha=0)(G)
         # elif self.model == "bnF":
         #     G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
         #     G = layers.BatchNormalization()(G)

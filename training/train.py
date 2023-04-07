@@ -35,7 +35,10 @@ def apply_mask(mask, X_train, input_file, add_noise=False):
     event_energy_after  = X_train.sum(axis=1)[:]
     event_energy = np.concatenate([event_energy_before.reshape(-1,1), event_energy_before2.reshape(-1,1), event_energy_after.reshape(-1,1)], axis=1)
 
-    categories, vector_list  = split_energy(input_file, event_energy)
+    kin, particle = get_kin(args.input_file)
+    input_data = h5py.File(f'{input_file}', 'r')
+    kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
+    categories, vector_list  = split_energy(kin, event_energy)
     fig, axes = plot_frame(categories, xlabel="Rel. change in E total", ylabel="Events")
     for index, energy in enumerate(categories):
         ax = axes[index]
@@ -80,9 +83,9 @@ def apply_mask(mask, X_train, input_file, add_noise=False):
     ax.hist(x, bins=100, range=(0,high))
     ax.set_yscale('symlog')
     ax.set_ylim(bottom=0)
-    os.makedirs(args.output_path, exist_ok=True)
+    os.makedirs(os.path.join(args.output_path, args.split_energy_position), exist_ok=True)
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
-    plt.savefig(os.path.join(args.output_path, f'mask_{particle}_{args.mask}keV.pdf'))
+    plt.savefig(os.path.join(args.output_path, args.split_energy_position, f'mask_{particle}_{args.mask}keV.pdf'))
     print('\033[92m[INFO] Mask\033[0m', args.mask, mask, '[keV] for voxel energy')
         
     # return masked input
@@ -100,6 +103,7 @@ def main(args):
     
     energies = get_energies(input_file)
     kin, particle = get_kin(input_file)
+    kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
     if args.label_scheme:
         label_scheme = args.label_scheme
     else:
@@ -110,7 +114,7 @@ def main(args):
         }[particle]
     label_kin = kin_to_label(kin, scheme=label_scheme)
     
-    X_train = input_data['showers'][:]
+    X_train = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, input_data['showers'][:])
     if args.mask is not None:
         if args.mask < 0:
             mask = list(np.unique(energies)/256 * abs(args.mask)) # E/256 * (-mask)
@@ -202,7 +206,7 @@ def main(args):
         'particle': particle+'s',
         'eta_slice': '20_25',
         'checkpoint_interval': 1000 if not args.debug else 10,
-        'output': args.output_path,
+        'output': os.path.join(args.output_path, args.split_energy_position),
         'max_iter': 4E5 if args.loading else 1E6,
         'cache': False,
         'loading': args.loading,
@@ -213,11 +217,14 @@ def main(args):
         with open(f'{wgan.train_folder}/scale_{args.preprocess}.json', 'w') as fp:
             json.dump(scale, fp, indent=2)
     plot_input(args, X_train, output=wgan.train_folder)
+    set_trace()
     wgan.train(X_train, label_kin)
 
 def plot_input(args, X_train, output):
     kin, particle = get_kin(args.input_file)
-    categories, xtrain_list = split_energy(args.input_file, X_train)
+    input_data = h5py.File(f'{args.input_file}', 'r')
+    kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
+    categories, xtrain_list = split_energy(kin, X_train)
     out_file = os.path.join(output, f'input_{particle}_{args.preprocess}.pdf')
     plot_energy_vox(categories, [xtrain_list], label_list=['Input'], nvox='all', logx=False, \
             particle=particle, output=out_file, draw_ref=False, xlabel='Energy of voxel as training input [MeV]')
@@ -237,6 +244,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
     parser.add_argument('--add_noise', required=False, action='store_true', help='Add noise (default: %(default)s)')
     parser.add_argument('--label_scheme', type=str, required=False, default='log_ratio', help='Label scheme defined in common.py (default: %(default)s)')
+    parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Load model (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)
