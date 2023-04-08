@@ -194,11 +194,28 @@ Request_disk   = 5 GB
 #Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Pslope.10
 #Queue 1
 
-Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_12_18
-Queue 1
-Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_12
-Queue 1
-Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_18
-Queue 1
+#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_12_18
+#Queue 1
+#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_12
+#Queue 1
+#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_18
+#Queue 1
 #Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lindex
 #Queue 1
+
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sle12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sge12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sge12le18
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sge18
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sge12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sge12le18
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sge18
+Queue 1

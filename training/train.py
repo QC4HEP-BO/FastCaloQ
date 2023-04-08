@@ -83,9 +83,9 @@ def apply_mask(mask, X_train, input_file, add_noise=False):
     ax.hist(x, bins=100, range=(0,high))
     ax.set_yscale('symlog')
     ax.set_ylim(bottom=0)
-    os.makedirs(os.path.join(args.output_path, args.split_energy_position), exist_ok=True)
+    os.makedirs(args.output_path, exist_ok=True)
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
-    plt.savefig(os.path.join(args.output_path, args.split_energy_position, f'mask_{particle}_{args.mask}keV.pdf'))
+    plt.savefig(os.path.join(args.output_path, f'mask_{particle}_{args.mask}keV.pdf'))
     print('\033[92m[INFO] Mask\033[0m', args.mask, mask, '[keV] for voxel energy')
         
     # return masked input
@@ -206,7 +206,7 @@ def main(args):
         'particle': particle+'s',
         'eta_slice': '20_25',
         'checkpoint_interval': 1000 if not args.debug else 10,
-        'output': os.path.join(args.output_path, args.split_energy_position),
+        'output': args.output_path,
         'max_iter': 4E5 if args.loading else 1E6,
         'cache': False,
         'loading': args.loading,

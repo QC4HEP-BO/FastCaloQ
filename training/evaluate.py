@@ -47,7 +47,9 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False):
     elif mode == 'layer':
         vector = E_lay
 
-    categories, vector_list = split_energy(input_file_name, vector)
+    kin = get_kin(input_file_name, label=True) # added in DS2
+    kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
+    categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
         return categories, vector_list, E_vox
     return categories, vector_list
@@ -104,7 +106,6 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     elif mode == 'layer':
         vector = E_lay
 
-    kin = get_kin(input_file_name, label=True) # added in DS2
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
         return categories, vector_list, E_vox
@@ -212,7 +213,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
             low  = median - min([np.absolute(np.min(etot) - median), np.absolute(np.quantile(etot, q=0.05) - median) * plot_range_factor[0], np.absolute(np.quantile(etot, q=1-0.16) - median) * plot_range_factor[1]])
 
         if logx:
-            bins = get_bins_given_edges(low if low > 0 else 0.00001, high, nbins, 9, logscale=logx)
+            bins = get_bins_given_edges(low if low > 0 else 0.00001, high if high > 0 else 0.00002, nbins, 9, logscale=logx)
         else:
             bins = get_bins_given_edges(low, high, nbins, 3, logscale=logx)
         y_tot, x_tot, _ = ax.hist(np.clip(etot, bins[0], bins[-1]), bins=bins, label='G4', histtype='step', density=False, color='k', linestyle='-', alpha=0.8, linewidth=lw)
@@ -312,7 +313,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         y = df[f'All{alt}']
 
         remove = f' MeV{alt}'
-        categories = [int(i.replace(remove, '')) for i in df if remove in i and alt in i]
+        categories = [float(i.replace(remove, '')) for i in df if remove in i and alt in i]
         chi2_list = [df[f'{c} MeV{alt}'].values for c in categories]
         fig, axes = plot_frame(categories + ['All energies'], xlabel="Iterations", ylabel="$\chi^{2}$/NDF", add_summary_panel=False)
         for index, energy in enumerate(categories):
@@ -360,7 +361,8 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', suffix=suffix, return_E_vox=True)
         categories, E_tru_list, E_tru_vox = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
         kin, particle = get_kin(args.input_file)
-        categories, kin_list = split_energy(args.input_file, kin)
+        kin = filter_energy(particle, h5py.File(f'{args.input_file}', 'r')['incident_energies'][:], args.split_energy_position, kin)
+        categories, kin_list = split_energy(kin, kin)
         xlabel = f"Energy of voxel [MeV]"
         plot_energy_vox(categories, [E_tru_list, E_gan_list], label_list=['Geant4', 'GAN'], nvox='all', \
                 logx=False, particle=particle, output=vox_name, xlabel=xlabel)

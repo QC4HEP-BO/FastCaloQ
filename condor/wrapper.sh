@@ -54,6 +54,7 @@ fi
 
 if [[ ! -z "$split_energy" ]]; then
     train_addition="$train_addition --split_energy_position $split_energy"
+    evaluate_addition="$evaluate_addition --split_energy_position $split_energy"
 fi
 
 ds=`echo $input | grep -oP '(?<=input/dataset).'`
@@ -61,7 +62,7 @@ ds=`echo $input | grep -oP '(?<=input/dataset).'`
 if [[ ${task} == *'train'* ]]; then
     command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition}"
 else
-    command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint --normalise ${evaluate_addition}"
+    command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition}"
 fi
 echo $command
 $command

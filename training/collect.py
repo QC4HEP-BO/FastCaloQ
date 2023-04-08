@@ -12,7 +12,7 @@ def completion_check(ifile):
     return df.shape[0]
 
 def main(args):
-    files = glob(f'{args.input}/**/*eta*[!p][!d][!f]/', recursive=True)
+    files = glob(f'{args.input}*/**/*eta*[!p][!d][!f]/', recursive=True)
     exclude = ['slope_study']
     files = [i for i in files for j in exclude if j not in i]
 
@@ -22,6 +22,7 @@ def main(args):
         folder =  path.split('/')[-4]
         if len(task) < 2 or len(job) < 4:
             print('\033[91m[ERROR] job not found in\033[0m', f'{path}')
+            set_trace()
         return tuple([task[0], task[1], job[0], job[2], job[3], folder])
 
     pid = {
