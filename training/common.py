@@ -41,6 +41,12 @@ def kin_to_label(kin, scheme='log_ratio'):
     kin_max = np.max(kin)
     if scheme == 'log_ratio':
         label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
+    elif scheme == 'log_ratio_full_photon':
+        kin_min, kin_max = 256, 4194304
+        label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
+    elif scheme == 'log_ratio_full_pion':
+        kin_min, kin_max = 151.98902586, 4194164.40232317
+        label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
     elif scheme == 'split_at_12_18':
         def sigmoid_factor(x): # to smooth the labels around the cut values
             return 1 / (1 + np.exp(-x))
