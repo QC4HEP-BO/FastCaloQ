@@ -382,6 +382,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         output_h5 = os.path.join(best_folder, 'h5', 'gan.h5')
         if not os.path.exists(output_h5):
             os.makedirs(os.path.dirname(output_h5), exist_ok=True)
+            print('Save to h5', E_gan_vox.shape, E_tru_vox.shape)
             gen_h5(E_gan_vox, E_tru_vox, output_h5)
 
 
@@ -415,7 +416,7 @@ def main(args):
 
     for models in chunks:
         arguments = (repeat(args), models)
-        results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
+        results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else 10)
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
         df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
         if os.path.exists(df_name):
