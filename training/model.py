@@ -168,6 +168,20 @@ class WGANGP:
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
             G = layers.Activation(activations.swish)(G)
+        elif self.model == "BNswishReLU":
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.ReLU()(G) # make sure output is positive
         elif self.model == "BNswishHe":
             G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
             G = layers.BatchNormalization()(G)

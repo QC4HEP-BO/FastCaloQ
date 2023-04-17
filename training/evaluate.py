@@ -1,5 +1,5 @@
 import json, time
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from HighLevelFeatures import HighLevelFeatures
 import numpy as np
 import h5py, os
@@ -13,6 +13,7 @@ from itertools import repeat
 from glob import glob
 from common import *
 from data import *
+from evaluate_classifier import *
 import re
 from pdb import set_trace
 
@@ -29,6 +30,7 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False):
         binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
 
     X_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['showers'][:])
+    Y_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['incident_energies'][:])
     if mode == 'total':
         hlf = HighLevelFeatures(particle, filename=binning_xml)
         hlf.CalculateFeatures(X_train)
@@ -51,7 +53,7 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False):
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
-        return categories, vector_list, E_vox
+        return categories, vector_list, E_vox, Y_train
     return categories, vector_list
 
 def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False):
@@ -106,6 +108,7 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     elif mode == 'layer':
         vector = E_lay
 
+    kin = get_kin(input_file_name, label=True) # added in DS2
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
         return categories, vector_list, E_vox
@@ -314,6 +317,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
 
         remove = f' MeV{alt}'
         categories = [float(i.replace(remove, '')) for i in df if remove in i and alt in i]
+        categories = [round(num) for num in categories if str(num)[-1] == '0']
         chi2_list = [df[f'{c} MeV{alt}'].values for c in categories]
         fig, axes = plot_frame(categories + ['All energies'], xlabel="Iterations", ylabel="$\chi^{2}$/NDF", add_summary_panel=False)
         for index, energy in enumerate(categories):
@@ -359,8 +363,9 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     if not (os.path.exists(vox_name) and mask_cache):
         # Plot 'masking' distribution; 'masking' means to remove voxel energies below a threshold of 1keV or 1MeV
         categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', suffix=suffix, return_E_vox=True)
-        categories, E_tru_list, E_tru_vox = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
-        kin, particle = get_kin(args.input_file)
+        categories, E_tru_list, E_tru_vox, E_incident = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
+        #kin, particle = get_kin(args.input_file) # for DS1
+        kin = get_kin(args.input_file, label=True) # added in DS2
         kin = filter_energy(particle, h5py.File(f'{args.input_file}', 'r')['incident_energies'][:], args.split_energy_position, kin)
         categories, kin_list = split_energy(kin, kin)
         xlabel = f"Energy of voxel [MeV]"
@@ -383,8 +388,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         if not os.path.exists(output_h5):
             os.makedirs(os.path.dirname(output_h5), exist_ok=True)
             print('Save to h5', E_gan_vox.shape, E_tru_vox.shape)
-            gen_h5(E_gan_vox, E_tru_vox, output_h5)
-
+            gen_h5(E_incident, E_gan_vox, output_h5)
 
 def gen_h5(energies, showers, output):
     dataset_file = h5py.File(output, 'w')
@@ -394,6 +398,71 @@ def gen_h5(energies, showers, output):
     dataset_file.create_dataset('showers', data=showers.reshape(len(showers), -1), compression='gzip')
     print('Save h5 file to', output)
     dataset_file.close()
+
+##### auc_model_i() is to evaluate model by training a binary classifier, taken from https://github.com/CaloChallenge/homepage/blob/main/code/evaluate.py
+def auc_model_i(args, model_i):
+    start_time = time.time()
+    input_file_name = args.input_file
+    particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
+    suffix = '_load' if args.loading else ''
+
+    parser_replacement = {
+        'save_mem': False,
+        'cls_n_layer': 2,
+        'cls_n_hidden': 50,
+        'cls_dropout_probability': 0,
+        'cls_batch_size': 1000,
+        'cls_n_epochs': 50,
+        'device': 'cpu',
+        'cls_lr': 2e-4,
+        'mode': 'cls-high',
+        'dataset': input_file_name.split('/')[-1].split('_')[-1].split('.')[0],
+        'output_dir': os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'evaluate_classifier'),
+        'ckpt': model_i,
+    }
+    parser_args = Namespace(**parser_replacement)
+
+    if os.path.exists(os.path.join(parser_args.output_dir, f'loss_{parser_args.ckpt}.json')):
+        with open(os.path.join(parser_args.output_dir, f'loss_{parser_args.ckpt}.json'), 'r') as f:
+            classifer_results = json.load(f)
+        if 'AUC' in classifer_results:
+            classifer_results.pop('loss_history')
+            print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'classifer_results', classifer_results['AUC'])
+            return classifer_results
+
+    if 'dataset1' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml'
+    elif 'dataset2' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_2.xml'
+    elif 'dataset3' in input_file_name:
+        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
+
+    categories, Etru_list, Etru_vox, E_incident = get_E_truth(input_file_name, mode='voxel', return_E_vox=True)
+    truth_time = time.time() - start_time
+    start_time = time.time()
+    categories, Egan_list, Egan_vox = get_E_gan(model_i=model_i, input_file_name=input_file_name, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix, mode='voxel', return_E_vox=True)
+    gan_time = time.time() - start_time
+    start_time = time.time()
+    hlf_class = HighLevelFeatures(particle, filename=binning_xml)
+    tru_array = prepare_high_data_for_classifier(hlf_class, Etru_vox, 0, E_incident)
+    hlf_class = HighLevelFeatures(particle, filename=binning_xml)
+    gan_array = prepare_high_data_for_classifier(hlf_class, np.array(Egan_vox), 1, E_incident)
+    train_data, test_data, val_data = ttv_split(tru_array, gan_array)
+    eval_acc, eval_auc, eval_JSD = train_evaluate_classifier(parser_args, train_data, val_data, test_data)
+    plot_time = time.time() - start_time
+
+    classifer_results = {
+        'ckpt': model_i,
+        'Accuracy': eval_acc,
+        'AUC': eval_auc,
+        'JSD': eval_JSD,
+    }
+    with open(os.path.join(parser_args.output_dir, f'loss_{parser_args.ckpt}.json'), 'r') as f:
+        loss_history = json.load(f)
+    with open(os.path.join(parser_args.output_dir, f'loss_{parser_args.ckpt}.json'), 'w') as f:
+        json.dump({**classifer_results, 'loss_history': loss_history}, f, indent=2)
+    print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'AUC', f'{classifer_results["AUC"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (classify) {plot_time:.1f}s')
+    return classifer_results
 
 def main(args):
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
@@ -416,7 +485,10 @@ def main(args):
 
     for models in chunks:
         arguments = (repeat(args), models)
-        results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else 10)
+        if 'dataset1' in args.input_file:
+            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
+        elif 'dataset2' in args.input_file:
+            results = execute_multi_tasks(auc_model_i, *arguments, parallel=0 if args.debug else 3)
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
         df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
         if os.path.exists(df_name):
