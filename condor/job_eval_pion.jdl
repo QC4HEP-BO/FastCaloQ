@@ -217,14 +217,3 @@ Request_disk   = 5 GB
 #Queue 1
 #Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-Mn1000
 #Queue 1
-
-#Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-Mn1
-#Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1
-#Queue 1
-Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
-Queue 1

@@ -326,7 +326,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         fig, axes = plot_frame(categories + ['All energies'], xlabel="Iterations", ylabel="$\chi^{2}$/NDF", add_summary_panel=False)
         for index, energy in enumerate(categories):
             ax = axes[index]
-            ax.scatter(x, chi2_list[index], c="k", edgecolors="k", alpha=0.9)
+            ax.scatter(x, chi2_list[index], facecolor='none', edgecolors="k", alpha=0.9)
             best_x_i = int(df[df[f'{energy} MeV{alt}'] == df[f'{energy} MeV{alt}'].min()]['ckpt'] * 1000)
             best_y_i = df[f'{energy} MeV{alt}'].min()
             try:
@@ -340,7 +340,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
             ax.set_ylim(max(0, ymin), min(50, ymax))
 
         ax = axes[-1]
-        ax.scatter(x, y, c="k", edgecolors="k", alpha=0.9)
+        ax.scatter(x, y, facecolor='none', edgecolors="k", alpha=0.9)
         ax.scatter(best_x, best_y, c="r")
         eta_min, eta_max = tuple(args.eta_slice.split('_'))
         ax.text(0.98, 0.98, particle_latex_name(particle) + "\n" + str("{:.2f}".format(int(eta_min) / 100, 2)) + r"$<|\eta|<$" + str("{:.2f}\n".format((int(eta_min) + 5) / 100, 2)) + "Iter {}\n$\chi^2$ = {:.1f}".format(best_x, best_y), transform=ax.transAxes, va="top", ha="right", fontsize=15, bbox=dict(facecolor='w', alpha=0.8, edgecolor='w'))
