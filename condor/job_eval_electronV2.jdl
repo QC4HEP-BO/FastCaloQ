@@ -2,7 +2,7 @@
 Universe        = vanilla
 Notification    = Never
 initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
-Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
+Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper_eval_electronV2.sh
 GetEnv          = True
 Error           = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).err
 Log             = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).log
@@ -34,27 +34,244 @@ Request_disk   = 5 GB
 #Queue 1
 #Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNswish_hpo106-M1
 #Queue 1
-#
-#Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo101-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo102-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo103-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo104-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo105-M1
-#Queue 1
-#Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo106-M1
-#Queue 1
 
-Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo107-M1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo100-M1
 Queue 1
-Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo108-M1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo100-M1
 Queue 1
-Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo109-M1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo100-M1
 Queue 1
-Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo110-M1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo100-M1
 Queue 1
-Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 BNReLU_hpo111-M1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo100-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo100-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo100-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo100-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo100-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo100-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo101-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo102-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo103-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo104-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo105-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo106-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo107-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo108-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo109-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo110-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 0 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 1 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 2 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 3 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 4 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 5 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 6 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 7 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 8 BNReLU_hpo111-M1
+Queue 1
+Arguments = evaluate ../input/dataset2/dataset_2_electrons_1.hdf5 9 BNReLU_hpo111-M1
 Queue 1

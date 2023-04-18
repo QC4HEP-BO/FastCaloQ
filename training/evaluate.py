@@ -478,8 +478,10 @@ def main(args):
         print('\033[92m[INFO] Evaluate\033[0m', particle, args.input_file, f'| {len(models)} models')
 
     if args.checkpoint:
-        size = 100
+        size = 101
         chunks = [models[x:x+size] for x in range(0, len(models), size)]
+        if args.islice is not None:
+            chunks = [chunks[args.islice]]
     else:
         chunks = [models]
 
@@ -487,10 +489,12 @@ def main(args):
         arguments = (repeat(args), models)
         if 'dataset1' in args.input_file:
             results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
+            filename = f'chi2.csv'
         elif 'dataset2' in args.input_file:
-            results = execute_multi_tasks(auc_model_i, *arguments, parallel=0 if args.debug else 3)
+            results = execute_multi_tasks(auc_model_i, *arguments, parallel=0 if args.debug else 1)
+            filename = f'classifier.csv'
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
-        df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
+        df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], filename)
         if os.path.exists(df_name):
             df_old = pd.read_csv(df_name)
             df = pd.concat([df, df_old]).drop_duplicates(subset=['ckpt']).reset_index(drop=True)
@@ -510,6 +514,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', required=False, action='store_true', help='Debug mode (default: %(default)s)')
     parser.add_argument('-p', '--preprocess', type=str, required=False, default=None, help='Preprocessing name (default: %(default)s)')
     parser.add_argument('--checkpoint', required=False, action='store_true', help='Split evaluation into chunks (default: %(default)s)')
+    parser.add_argument('--islice', required=False, type=int, default=None, help='Split evaluation into chunks and only run one slice (default: %(default)s)')
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
     parser.add_argument('--normalise', required=False, action='store_true', help='Plot E_gan/E_truth (default: %(default)s)')
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Load model (default: %(default)s)')
