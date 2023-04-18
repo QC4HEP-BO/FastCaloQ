@@ -58,6 +58,9 @@ if [[ ! -z "$split_energy" ]]; then
 fi
 
 ds=`echo $input | grep -oP '(?<=input/dataset).'`
+if [[ "$ds" = "2" ]]; then
+    evaluate_addition="$evaluate_addition --normalise"
+fi
 
 if [[ ${task} == *'train'* ]]; then
     command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition}"

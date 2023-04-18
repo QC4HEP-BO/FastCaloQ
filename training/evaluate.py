@@ -17,7 +17,7 @@ from evaluate_classifier import *
 import re
 from pdb import set_trace
 
-def get_E_truth(input_file_name, mode='total', return_E_vox=False):
+def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=False):
     # creating instance of HighLevelFeatures class to handle geometry based on binning file
     particle = input_file_name.split('/')[-1].split('_')[-2][:-1]
     input_file = h5py.File(f'{input_file_name}', 'r')
@@ -49,14 +49,18 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False):
     elif mode == 'layer':
         vector = E_lay
 
+    if normalise:
+        vector /= Y_train
     kin = get_kin(input_file_name, label=True) # added in DS2
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
         return categories, vector_list, E_vox, Y_train
+    if normalise:
+        return categories, vector_list, Y_train
     return categories, vector_list
 
-def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False):
+def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False, normalise_by=None):
     kin, particle = get_kin(input_file_name)
     input_file = h5py.File(f'{input_file_name}', 'r')
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
@@ -108,6 +112,9 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     elif mode == 'layer':
         vector = E_lay
 
+    if normalise_by is not None:
+        vector /= normalise_by
+
     kin = get_kin(input_file_name, label=True) # added in DS2
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
@@ -144,7 +151,7 @@ def plot_energy_layer(particle, model_i, input_file_name, train_path, eta_slice)
             'nbins': 80,
             'output_name': plot_name,
             'lw': 1,
-            'xrange_from_caloflow': True,
+            'xrange_from_caloflow': not args.normalise,
         }
         plot_Etot([''], E_vox_list_merge_energy[ilayer], E_gan_list_merge_energy[ilayer], config=config)
 
@@ -196,7 +203,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
     ndf_tot = chi2_tot = 0
     for index, energy in enumerate(categories):
         # Convert energy to GeV
-        GeV = 1000
+        GeV = 1 if args.normalise else 1000 
         etot = Etot_list[index] / GeV
         egan = Egan_list[index] / GeV
 
@@ -275,13 +282,10 @@ def plot_model_i(args, model_i):
             print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All'])
             return chi2_results
 
-    categories, Etot_list = get_E_truth(args.input_file)
+    categories, Etot_list, Y_train = get_E_truth(args.input_file, normalise=args.normalise)
     truth_time = time.time() - start_time
     start_time = time.time()
-    categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix)
-    if args.normalise:
-        Egan_list = normalise_energy(Etot_list, Egan_list)
-        Etot_list = normalise_energy(Etot_list, Etot_list)
+    categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix, normalise_by=(Y_train if args.normalise else None))
     gan_time = time.time() - start_time
     start_time = time.time()
 
@@ -491,7 +495,8 @@ def main(args):
             results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
             filename = f'chi2.csv'
         elif 'dataset2' in args.input_file:
-            results = execute_multi_tasks(auc_model_i, *arguments, parallel=0 if args.debug else 1)
+            #results = execute_multi_tasks(auc_model_i, *arguments, parallel=0 if args.debug else 1)
+            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
             filename = f'classifier.csv'
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
         df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], filename)
