@@ -116,6 +116,7 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
         vector /= normalise_by
 
     kin = get_kin(input_file_name, label=True) # added in DS2
+    kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
         return categories, vector_list, E_vox
@@ -282,7 +283,10 @@ def plot_model_i(args, model_i):
             print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All'])
             return chi2_results
 
-    categories, Etot_list, Y_train = get_E_truth(args.input_file, normalise=args.normalise)
+    if args.normalise:
+        categories, Etot_list, Y_train = get_E_truth(args.input_file, normalise=args.normalise)
+    else:
+        categories, Etot_list = get_E_truth(args.input_file, normalise=args.normalise)
     truth_time = time.time() - start_time
     start_time = time.time()
     categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix, normalise_by=(Y_train if args.normalise else None))
@@ -388,11 +392,11 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
             plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
         plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
 
-        output_h5 = os.path.join(best_folder, 'h5', 'gan.h5')
-        if not os.path.exists(output_h5):
-            os.makedirs(os.path.dirname(output_h5), exist_ok=True)
-            print('Save to h5', E_gan_vox.shape, E_tru_vox.shape)
-            gen_h5(E_incident, E_gan_vox, output_h5)
+        #output_h5 = os.path.join(best_folder, 'h5', 'gan.h5')
+        #if not os.path.exists(output_h5):
+        #    os.makedirs(os.path.dirname(output_h5), exist_ok=True)
+        #    print('Save to h5', E_gan_vox.shape, E_tru_vox.shape)
+        #    gen_h5(E_incident, E_gan_vox, output_h5)
 
 def gen_h5(energies, showers, output):
     dataset_file = h5py.File(output, 'w')

@@ -132,7 +132,9 @@ def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=T
             ax.tick_params(axis="both", which="major", width=1, length=6, labelsize=10, direction="in")
             ax.tick_params(axis="both", which="minor", width=0.5, length=3, labelsize=10, direction="in")
             ax.minorticks_on()
-            if index == length-1 and add_summary_panel:
+            if index >= length:
+                ax.axis("off")
+            elif index == length-1 and add_summary_panel:
                 ax.axis("off")
             else:
                 if isinstance(energy, str):
