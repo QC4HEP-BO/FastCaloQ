@@ -115,8 +115,9 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     if normalise_by is not None:
         vector /= normalise_by
 
-    kin = get_kin(input_file_name, label=True) # added in DS2
-    kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
+    if 'dataset2' in input_file_name:
+        kin = get_kin(input_file_name, label=True) # added in DS2
+        kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
         return categories, vector_list, E_vox
@@ -232,6 +233,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
         chi2, ndf = chi2testWW(y_tot, y_gan)
         chi2_tot += chi2
         ndf_tot += ndf
+        energy = round(energy) if len(str(energy)) > 0 and str(energy)[-1] == '0' else energy
         results.append((f'{energy} MeV', chi2/ndf))
         if logx:
             ax.set_xscale('log')
