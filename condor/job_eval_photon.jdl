@@ -257,14 +257,14 @@ Request_disk   = 5 GB
 #Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-P-L-Sle12.2
 #Queue 1
 #
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge12.3
-#Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge12le18.3
-#Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge18.3
-#Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-P-L-Sle12.3
-#Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge12.3
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge12le18.3
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge18.3
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-P-L-Sle12.3
+Queue 1
 
 Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo4-M-P-L-Sle12.2
 Queue 1
@@ -276,4 +276,21 @@ Queue 1
 Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12.2
 Queue 1
 Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12.3
+Queue 1
+
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo32-M-P-L-Sle12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo32-M-P-L-Sle12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.2
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.2
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.3
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.3
 Queue 1

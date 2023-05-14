@@ -127,16 +127,17 @@ def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=T
         width = int(np.ceil(np.sqrt(length)))
         height = int(np.ceil(length / width))
         fig, axes = plt.subplots(nrows=height, ncols=width, figsize=(4*width, 4*height))
+        for ax in axes.flatten():
+            ax.axis("off")
         for index, energy in enumerate(categories):
             ax = axes[(index) // width, (index) % width]
             ax.tick_params(axis="both", which="major", width=1, length=6, labelsize=10, direction="in")
             ax.tick_params(axis="both", which="minor", width=0.5, length=3, labelsize=10, direction="in")
             ax.minorticks_on()
-            if index >= length:
-                ax.axis("off")
-            elif index == length-1 and add_summary_panel:
-                ax.axis("off")
+            if index == length-1 and add_summary_panel:
+                pass
             else:
+                ax.axis("on")
                 if isinstance(energy, str):
                     energy_legend = energy
                 else:
