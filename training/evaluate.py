@@ -394,11 +394,14 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
             plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
         plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
 
-        #output_h5 = os.path.join(best_folder, 'h5', 'gan.h5')
-        #if not os.path.exists(output_h5):
-        #    os.makedirs(os.path.dirname(output_h5), exist_ok=True)
-        #    print('Save to h5', E_gan_vox.shape, E_tru_vox.shape)
-        #    gen_h5(E_incident, E_gan_vox, output_h5)
+        if args.save_h5:
+            output_h5 = os.path.join(best_folder, 'h5', 'gan.h5')
+            if not os.path.exists(output_h5):
+                os.makedirs(os.path.dirname(output_h5), exist_ok=True)
+                print('Save to h5', E_gan_vox.shape, E_tru_vox.shape)
+                gen_h5(E_incident, E_gan_vox, output_h5)
+            else:
+                print('Skip', output_h5)
 
 def gen_h5(energies, showers, output):
     dataset_file = h5py.File(output, 'w')
@@ -529,6 +532,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
     parser.add_argument('--normalise', required=False, action='store_true', help='Plot E_gan/E_truth (default: %(default)s)')
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Load model (default: %(default)s)')
+    parser.add_argument('--save_h5', required=False, action='store_true', help='Save H5 https://calochallenge.github.io/homepage/ (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)
