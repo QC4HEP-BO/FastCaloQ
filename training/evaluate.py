@@ -74,6 +74,7 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
 
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__)
+    set_trace()
     E_vox = wgan.predict(model_i=model_i, labels=label_kin)
     if preprocess is not None:
         if (re.compile("^log10.([0-9.]+)+$").match(preprocess) \
@@ -504,7 +505,6 @@ def main(args):
             results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
             filename = f'chi2.csv'
         elif 'dataset2' in args.input_file:
-            #results = execute_multi_tasks(auc_model_i, *arguments, parallel=0 if args.debug else 1)
             results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
             filename = f'classifier.csv'
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
