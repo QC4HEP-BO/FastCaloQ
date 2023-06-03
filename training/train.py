@@ -136,6 +136,7 @@ def main(args):
     if 'photon' in particle:
         hp_config = {
             'model': args.model if args.model else 'BNswish',
+            'dmodel': 'spectral_norm',
             'G_size': 1,
             'D_size': 1,
             'optimizer': 'adam',

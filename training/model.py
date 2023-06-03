@@ -23,6 +23,7 @@ class WGANGP:
         self.loading = job_config.get('loading', None)
         
         self.model = hp_config.get('model', 'BNswish') # default to photon GAN BNswish
+        self.dmodel = hp_config.get('dmodel', 'dense')
         self.G_size = hp_config.get('G_size', 1)
         self.D_size = hp_config.get('D_size', 1)
         self.optimizer = hp_config.get('optimizer', 'adam')
@@ -266,21 +267,37 @@ class WGANGP:
             bias_node = self.use_bias
 
         model = tf.keras.Sequential()
-        model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node,
-                                input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros")
+        if self.dmodel == 'spectral_norm':
+            from tensorflow_addons.layers import SpectralNormalization
+            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node, input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros"))
+            model.add(layers.ReLU())
+            model.add(SpectralNormalization(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,
+                                    input_shape=(int(self.discriminatorLayers[0] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
+                    )
+            model.add(layers.ReLU())
+            model.add(SpectralNormalization(layers.Dense(int(self.discriminatorLayers[2] * self.D_size), use_bias=bias_node,
+                                    input_shape=(int(self.discriminatorLayers[1] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
+                    )
+            model.add(layers.ReLU())
+            model.add(SpectralNormalization(layers.Dense(1, use_bias=bias_node,
+                                    input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
                 )
-        model.add(layers.ReLU())
-        model.add(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,
-                                input_shape=(int(self.discriminatorLayers[0] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
+        elif self.dmodel == 'dense':
+            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node,
+                                    input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros")
+                    )
+            model.add(layers.ReLU())
+            model.add(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,
+                                    input_shape=(int(self.discriminatorLayers[0] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
+                    )
+            model.add(layers.ReLU())
+            model.add(layers.Dense(int(self.discriminatorLayers[2] * self.D_size), use_bias=bias_node,
+                                    input_shape=(int(self.discriminatorLayers[1] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
+                    )
+            model.add(layers.ReLU())
+            model.add(layers.Dense(1, use_bias=bias_node,
+                                    input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
                 )
-        model.add(layers.ReLU())
-        model.add(layers.Dense(int(self.discriminatorLayers[2] * self.D_size), use_bias=bias_node,
-                                input_shape=(int(self.discriminatorLayers[1] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
-                )
-        model.add(layers.ReLU())
-        model.add(layers.Dense(1, use_bias=bias_node,
-                                input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
-            )
 
         if not self.no_output:
             model.summary()
