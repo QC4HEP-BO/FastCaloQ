@@ -207,7 +207,7 @@ def main(args):
         'eta_slice': '20_25',
         'checkpoint_interval': 1000 if not args.debug else 10,
         'output': args.output_path,
-        'max_iter': 4E5 if args.loading else 1E6,
+        'max_iter': 4E5 if args.loading else args.max_iter,
         'cache': False,
         'loading': args.loading,
     }
@@ -244,7 +244,8 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--loading', type=str, required=False, default=None, help='Load model (default: %(default)s)')
     parser.add_argument('--add_noise', required=False, action='store_true', help='Add noise (default: %(default)s)')
     parser.add_argument('--label_scheme', type=str, required=False, default='log_ratio', help='Label scheme defined in common.py (default: %(default)s)')
-    parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Load model (default: %(default)s)')
+    parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Energy split training (default: %(default)s)')
+    parser.add_argument('--max_iter', type=int, required=False, default=1E6, help='Number of iterations (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)

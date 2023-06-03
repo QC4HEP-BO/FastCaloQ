@@ -277,19 +277,22 @@ Request_disk   = 4 GB
 #Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12.3
 #Queue 1
 
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo32-M-P-L-Sle12
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo32-M-P-L-Sle12
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.2
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.2
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.3
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.3
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo32-M-P-L-Sle12
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo32-M-P-L-Sle12
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.2
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.2
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.3
+#Queue 1
+#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.3
+#Queue 1
+
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.3
 Queue 1

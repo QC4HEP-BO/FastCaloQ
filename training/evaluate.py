@@ -74,7 +74,6 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
 
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__)
-    set_trace()
     E_vox = wgan.predict(model_i=model_i, labels=label_kin)
     if preprocess is not None:
         if (re.compile("^log10.([0-9.]+)+$").match(preprocess) \
