@@ -129,6 +129,13 @@ def main(args):
                 or re.compile("^slope.([0-9.]+)+$").match(args.preprocess)
             ): # log10.x, scale.x, slope
             X_train, scale = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file)
+        elif args.preprocess == 'concatlayer':
+            from XMLHandler import XMLHandler
+            xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
+            shower_shape = X_train.shape
+            X_train = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file, xml=xml)
+            scale = None
+            print('\033[92m[INFO] Training size enlarged with layer info\033[0m', shower_shape, '->', X_train.shape)
     else:
         X_train = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file)
         scale = None

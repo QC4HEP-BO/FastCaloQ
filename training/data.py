@@ -2,10 +2,20 @@ import numpy as np
 import re
 from pdb import set_trace
 
-def preprocessing(X_train, kin, name=None, reverse=False, input_file=None):
+def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=None):
     if not reverse: # train
         if name is None:
             X_train /= kin
+        elif name in ['concatlayer', 'normlayer']:
+            X_train /= kin
+            bin_edges = xml.GetBinEdges()
+            E_layers = []
+            for layer in xml.GetRelevantLayers():
+                E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].mean(axis=-1).reshape(-1, 1))
+            E_layers = np.concatenate(E_layers, axis=1)
+            set_trace()
+            X_train = np.concatenate([X_train, E_layers], axis=1)
+            return X_train
         elif name == 'neglog10plus1':
             X_train = - np.log10((X_train + 1) / kin)
         elif re.compile("^log10.([0-9.]+)+$").match(name): # log10.x
@@ -68,6 +78,10 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None):
     else: # evaluate
         if name is None:
             X_train *= kin
+        elif name in ['concatlayer', 'normlayer']:
+            X_train = X_train[:, :X_train.shape[1] - len(xml.GetRelevantLayers())] # drop the last xml.GetRelevantLayers() columns
+            X_train *= kin
+            return X_train
         elif name == 'neglog10plus1':
              X_train = np.power(10, -X_train) * kin - 1
         elif re.compile("^log10.([0-9.]+)+$").match(name): # log10.x

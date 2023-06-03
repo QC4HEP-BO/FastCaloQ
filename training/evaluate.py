@@ -82,6 +82,10 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             ): # log10.x, scale.x, slope
             scale = os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', f'scale_{preprocess}.json')
             E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=scale)
+        elif preprocess == 'concatlayer':
+            from XMLHandler import XMLHandler
+            xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
+            E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=None, xml=xml)
     else:
         E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True)
 
