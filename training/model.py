@@ -319,6 +319,34 @@ class WGANGP:
         gp = self.lam * tf.reduce_mean((slopes - 1.0) ** 2)
         return gp
 
+    def set_special_config(self, config_string):
+        layer_info = config_string.split('__')
+        
+        self.special_config = layer_info[0]
+        self.nlayers = int(layer_info[-2])
+        self.nvoxels_per_layer = tf.convert_to_tensor([int(i) for i in layer_info[-1].split(':')])
+        self.edges = [tf.reduce_sum(self.nvoxels_per_layer[:i]) for i in range(self.nlayers+1)]
+
+    @tf.function
+    def manipulate_x_fake(self, x_fake):
+        sum_E_layers = []
+        for i in range(self.nlayers):
+            sum_E_layers.append(tf.reshape(tf.reduce_sum(x_fake[:, self.edges[i]: self.edges[i+1]], axis=-1), (-1, 1)))
+        sum_E_layers = tf.concat(sum_E_layers, axis=1)
+
+        pred_E_layers = x_fake[:, tf.reduce_sum(self.nvoxels_per_layer):]
+
+        ratio_pred_sum = pred_E_layers / sum_E_layers
+
+        norm_matrix = []
+        for i in range(self.nlayers):
+            norm_matrix.append(tf.repeat( tf.reshape(ratio_pred_sum[:, i], (-1, 1)), self.nvoxels_per_layer[i], axis=-1))
+        norm_matrix.append(tf.ones(pred_E_layers.shape))
+        norm_matrix = tf.concat(norm_matrix, axis=1)
+
+        x_fake *= norm_matrix
+        return x_fake
+
     @tf.function
     def D_loss(self, x_real, cond_label):
         if self.model == "GANv1":
@@ -331,6 +359,9 @@ class WGANGP:
             z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
             logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
         x_fake = self.G(inputs=[z, cond_label])
+        if self.special_config == 'normlayer':
+            x_fake = self.manipulate_x_fake(x_fake)
+
         D_fake = self.D(tf.concat([x_fake, cond_label], 1))
         D_real = self.D(tf.concat([x_real, cond_label], 1))
         D_loss = (tf.reduce_mean(D_fake)- tf.reduce_mean(D_real)+ self.gradient_penalty(f=partial(self.D, training=True),x_real=x_real,x_fake=x_fake,cond_label=cond_label,))
@@ -470,6 +501,8 @@ class WGANGP:
             return 0
         z = tf.random.normal([labels.shape[0], self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
         x_fake = self.G(inputs=[z, labels])
+        if self.special_config == 'normlayer':
+            x_fake = self.manipulate_x_fake(x_fake)
         return x_fake
 
 

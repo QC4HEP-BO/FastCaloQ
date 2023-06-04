@@ -13,7 +13,6 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             for layer in xml.GetRelevantLayers():
                 E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].mean(axis=-1).reshape(-1, 1))
             E_layers = np.concatenate(E_layers, axis=1)
-            set_trace()
             X_train = np.concatenate([X_train, E_layers], axis=1)
             return X_train
         elif name == 'neglog10plus1':
