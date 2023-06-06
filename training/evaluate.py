@@ -74,6 +74,10 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
 
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__)
+    if preprocess == 'normlayer':
+        from XMLHandler import XMLHandler
+        xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
+        wgan.set_special_config(f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}')
     E_vox = wgan.predict(model_i=model_i, labels=label_kin)
     if preprocess is not None:
         if (re.compile("^log10.([0-9.]+)+$").match(preprocess) \

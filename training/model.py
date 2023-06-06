@@ -24,6 +24,7 @@ class WGANGP:
         
         self.model = hp_config.get('model', 'BNswish') # default to photon GAN BNswish
         self.dmodel = hp_config.get('dmodel', 'dense')
+        self.special_config = None
         self.G_size = hp_config.get('G_size', 1)
         self.D_size = hp_config.get('D_size', 1)
         self.optimizer = hp_config.get('optimizer', 'adam')
@@ -212,15 +213,15 @@ class WGANGP:
         elif self.model == "BNLeakyReLU2":
             G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
             G = layers.BatchNormalization()(G)
-            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.LeakyReLU(alpha=0.01)(G)
             G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
-            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.LeakyReLU(alpha=0.01)(G)
             G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
-            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.LeakyReLU(alpha=0.01)(G)
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
-            G = layers.LeakyReLU(alpha=0)(G)
+            G = layers.LeakyReLU(alpha=0.01)(G)
         # elif self.model == "bnF":
         #     G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
         #     G = layers.BatchNormalization()(G)
@@ -329,19 +330,20 @@ class WGANGP:
 
     @tf.function
     def manipulate_x_fake(self, x_fake):
-        sum_E_layers = []
+        layer_E_from_voxel = []
         for i in range(self.nlayers):
-            sum_E_layers.append(tf.reshape(tf.reduce_sum(x_fake[:, self.edges[i]: self.edges[i+1]], axis=-1), (-1, 1)))
-        sum_E_layers = tf.concat(sum_E_layers, axis=1)
+            layer_E_from_voxel.append(tf.reshape(tf.reduce_mean(x_fake[:, self.edges[i]: self.edges[i+1]], axis=-1), (-1, 1)))
+        layer_E_from_voxel = tf.concat(layer_E_from_voxel, axis=1)
 
-        pred_E_layers = x_fake[:, tf.reduce_sum(self.nvoxels_per_layer):]
+        layer_E_from_pred = x_fake[:, tf.reduce_sum(self.nvoxels_per_layer):]
 
-        ratio_pred_sum = pred_E_layers / sum_E_layers
+        # ratio between predicted E_avg in the last columns of x_fake and E_avg calculated from predicted voxel energies
+        ratio_pred_sum = tf.abs(layer_E_from_pred / layer_E_from_voxel)
 
         norm_matrix = []
         for i in range(self.nlayers):
             norm_matrix.append(tf.repeat( tf.reshape(ratio_pred_sum[:, i], (-1, 1)), self.nvoxels_per_layer[i], axis=-1))
-        norm_matrix.append(tf.ones(pred_E_layers.shape))
+        norm_matrix.append(tf.ones(layer_E_from_pred.shape))
         norm_matrix = tf.concat(norm_matrix, axis=1)
 
         x_fake *= norm_matrix
@@ -503,6 +505,7 @@ class WGANGP:
         x_fake = self.G(inputs=[z, labels])
         if self.special_config == 'normlayer':
             x_fake = self.manipulate_x_fake(x_fake)
+            x_fake = x_fake[:, :-self.nlayers]
         return x_fake
 
 

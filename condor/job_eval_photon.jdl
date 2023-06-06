@@ -296,5 +296,11 @@ Request_disk   = 5 GB
 
 #Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.3
 #Queue 1
-Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.4
+#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.4
+#Queue 1
+#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pconcatlayer-L-Sge18.1
+#Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pnormlayer-L-Sge18.1
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-Pnormlayer-L-Sge18.1
 Queue 1
