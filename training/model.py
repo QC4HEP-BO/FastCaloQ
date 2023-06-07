@@ -452,6 +452,7 @@ class WGANGP:
                     meta_data['Dloss'].append(float(D_loss_curr))
 
                     logging.info(f"Iter: {iteration}; D loss: {D_loss_curr:.4f}; G_loss: {G_loss_curr:.4f}; TotalTime: {time_diff:.2f}; TrainLoop: {dur_train_loop:.2f}, Save: {save_time:.2}")
+                    self.plot_loss(verbose='ERROR')
                     dur_train_loop = dur_getTrainData_ultimate = 0.0
 
 
@@ -482,7 +483,7 @@ class WGANGP:
         ax.legend(fontsize=10)
         plt.savefig(os.path.join(self.train_folder, 'learningrate.pdf'))
 
-    def plot_loss(self):
+    def plot_loss(self, verbose='INFO'):
         with open(os.path.join(self.train_folder, 'result.json'), 'r') as fp:
             meta_data = json.load(fp)
 
@@ -494,7 +495,8 @@ class WGANGP:
         ax.grid(True)
         ax.legend(fontsize=10)
         plt.savefig(os.path.join(self.train_folder, 'loss.pdf'))
-        logging.info('Save to %s', os.path.join(self.train_folder, 'loss.pdf'))
+        if verbose == 'INFO':
+            logging.info('Save to %s', os.path.join(self.train_folder, 'loss.pdf'))
 
     def predict(self, model_i, labels, ischeck=False):
         checkpoint_dir = os.path.join(self.output, 'checkpoints')
