@@ -380,7 +380,7 @@ class WGANGP:
         n_batch = tf.cast(tf.math.floordiv(n_samples, true_batchsize), tf.int64)
         n_shuffles = tf.cast(tf.math.ceil(tf.divide(n_iter, n_batch)), tf.int64)
         ds = tf.data.Dataset.from_tensor_slices((self.X, self.Labels))
-        ds = ds.shuffle(buffer_size=n_samples).repeat(n_shuffles).batch(true_batchsize, drop_remainder=True).prefetch(4)
+        ds = ds.shuffle(buffer_size=n_samples).cache().repeat(n_shuffles).batch(true_batchsize, drop_remainder=True).prefetch(4)
         self.ds_iter = iter(ds)
         X_feature_size = tf.gather(tf.shape(self.X), 1)
         Labels_feature_size = tf.gather(tf.shape(self.Labels), 1)
@@ -410,7 +410,7 @@ class WGANGP:
         os.makedirs(checkpoint_dir, exist_ok=True)
 
         s_time = time.time()
-        dur_train_loop = 0
+        dur_train_loop, dur_convert_loop, dur_getnext_loop = 0, 0, 0
         D_loss_curr, G_loss_curr = 0.0, 0.0
         if self.cache:
             existing_models = glob(checkpoint_dir + "/model*.index")
@@ -451,17 +451,23 @@ class WGANGP:
                     meta_data['Gloss'].append(float(G_loss_curr))
                     meta_data['Dloss'].append(float(D_loss_curr))
 
-                    logging.info(f"Iter: {iteration}; D loss: {D_loss_curr:.4f}; G_loss: {G_loss_curr:.4f}; TotalTime: {time_diff:.2f}; TrainLoop: {dur_train_loop:.2f}, Save: {save_time:.2}")
+                    logging.info(f"Iter: {iteration}; D loss: {D_loss_curr:.4f}; G_loss: {G_loss_curr:.4f}; TotalTime: {time_diff:.2f}; GetNext: {dur_getnext_loop:.4f}, ConvertLoop: {dur_convert_loop:.2f}, TrainLoop: {dur_train_loop:.2f}, Save: {save_time:.2}")
                     self.plot_loss(verbose='ERROR')
-                    dur_train_loop = dur_getTrainData_ultimate = 0.0
+                    dur_train_loop, dur_convert_loop, dur_getnext_loop = 0, 0, 0
 
 
+            getnext_loop_start = time.time()
             X, Labels = self.ds_iter.get_next()
+            getnext_loop_stop = time.time()
+            dur_getnext_loop += getnext_loop_stop - getnext_loop_start
             if len(existing_models) > 1:
                 continue
             else:
+                convert_loop_start = time.time()
                 X_trains = tf.reshape(X, self.X_batch_shape)
                 cond_labels = tf.reshape(Labels, self.Labels_batch_shape)
+                convert_loop_stop = time.time()
+                dur_convert_loop += convert_loop_stop - convert_loop_start
 
                 train_loop_start = time.time()
                 D_loss_curr, G_loss_curr = self.train_loop(X_trains, cond_labels)
