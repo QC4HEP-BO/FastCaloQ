@@ -300,11 +300,11 @@ Request_disk   = 4 GB
 #Queue 1
 #Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pconcatlayer-L-Sge18.1
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pnormlayer-L-Sge18.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-Pnormlayer-L-Sge18.1
-#Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pnormlayer-L-Sge18.2
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pnormlayer-L-Sge18.1
 Queue 1
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-Pnormlayer-L-Sge18.2
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-Pnormlayer-L-Sge18.1
+Queue 1
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo112-M-Pnormlayer-L-Sge18.1
+Queue 1
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo112-M-Pnormlayer-L-Sge18.1
 Queue 1

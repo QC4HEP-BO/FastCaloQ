@@ -338,7 +338,7 @@ class WGANGP:
         layer_E_from_pred = x_fake[:, tf.reduce_sum(self.nvoxels_per_layer):]
 
         # ratio between predicted E_avg in the last columns of x_fake and E_avg calculated from predicted voxel energies
-        ratio_pred_sum = tf.abs(layer_E_from_pred / layer_E_from_voxel)
+        ratio_pred_sum = tf.math.divide_no_nan(layer_E_from_pred, layer_E_from_voxel)
 
         norm_matrix = []
         for i in range(self.nlayers):

@@ -304,3 +304,7 @@ Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M
 Queue 1
 Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-Pnormlayer-L-Sge18.1
 Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo112-M-Pnormlayer-L-Sge18.1
+Queue 1
+Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo112-M-Pnormlayer-L-Sge18.1
+Queue 1
