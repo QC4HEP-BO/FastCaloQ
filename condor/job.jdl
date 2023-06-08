@@ -1,14 +1,26 @@
-universe                = vanilla
-arguments               = 
-log                     = log/test.log
-output                  = log/outfile.$(Cluster).$(Process).out
-error                   = log/errors.$(Cluster).$(Process).err
+#Agent jdl file
+Universe        = vanilla
+Notification    = Never
+initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
+Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
+GetEnv          = True
+Error           = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).err
+Log             = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).log
+Output          = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).out
+notify_user     = rui.zhang@cern.ch
+notification    = always
+stream_output   = False
+stream_error    = False
 Requirements = ((Arch == "X86_64") && (regexp("CentOS7",OpSysAndVer)))
 WhenToTransferOutput = ON_EXIT_OR_EVICT
 OnExitRemove         = TRUE
 +JobFlavour = "testmatch"
++JobType="training"
 request_GPUs = 1
 request_CPUs = 4
 Request_memory = 8 GB
 Request_disk   = 4 GB
-queue
+
+Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1-debug
+
+Queue 1
