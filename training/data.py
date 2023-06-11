@@ -6,7 +6,7 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
     if not reverse: # train
         if name is None:
             X_train /= kin
-        elif name in ['concatlayer', 'normlayer']:
+        elif name in ['concatlayer', 'normlayer1']:
             X_train /= kin
             bin_edges = xml.GetBinEdges()
             E_layers = []
@@ -14,6 +14,25 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
                 E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].mean(axis=-1).reshape(-1, 1))
             E_layers = np.concatenate(E_layers, axis=1)
             X_train = np.concatenate([X_train, E_layers], axis=1)
+            return X_train
+        elif name in ['normlayer2']:
+            # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
+            import tensorflow as tf
+            bin_edges = xml.GetBinEdges()
+            E_layers = []
+            for layer in xml.GetRelevantLayers():
+                E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].sum(axis=-1).reshape(-1, 1))
+                # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
+                X_train[:, bin_edges[layer]:bin_edges[layer+1]] = tf.math.divide_no_nan(X_train[:, bin_edges[layer]:bin_edges[layer+1]], E_layers[-1])
+            E_layers = np.concatenate(E_layers, axis=1)
+            E_shower = E_layers.sum(axis=-1).reshape(-1, 1)
+
+            # normalise layer energy by shower energy; afterwards, by definition E_layers.sum(axis=-1) = 1
+            E_layers = tf.math.divide_no_nan(E_layers, E_layers.sum(axis=-1).reshape(-1, 1))
+
+            # construct E_shower / kin
+            E_truth = np.full((X_train.shape[0], 1), E_shower/kin)
+            X_train = np.concatenate([X_train, E_layers, E_truth], axis=1)
             return X_train
         elif name == 'neglog10plus1':
             X_train = - np.log10((X_train + 1) / kin)
@@ -77,10 +96,24 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
     else: # evaluate
         if name is None:
             X_train *= kin
-        elif name in ['concatlayer', 'normlayer']:
+        elif name in ['concatlayer', 'normlayer1']:
             X_train = X_train[:, :X_train.shape[1] - len(xml.GetRelevantLayers())] # drop the last xml.GetRelevantLayers() columns
             X_train *= kin
             return X_train
+        elif name in ['normlayer2']:
+            import tensorflow as tf
+            E_shower = tf.reshape(X_train[:, -1], (-1, 1))
+            E_shower *= kin
+
+            E_layers = X_train[:, -1-len(xml.GetRelevantLayers()) : -1].numpy()
+            E_layers *= E_shower
+
+            X_train = X_train[:, :-1-len(xml.GetRelevantLayers())].numpy() # drap the last xml.GetRelevantLayers() + 1 columns
+            bin_edges = xml.GetBinEdges()
+            for num, layer in enumerate(xml.GetRelevantLayers()):
+                X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
+
+            return tf.convert_to_tensor(X_train)
         elif name == 'neglog10plus1':
              X_train = np.power(10, -X_train) * kin - 1
         elif re.compile("^log10.([0-9.]+)+$").match(name): # log10.x

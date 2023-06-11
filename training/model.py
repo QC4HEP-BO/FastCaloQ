@@ -14,13 +14,17 @@ from tensorflow.keras.models import Model
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Wrapper
 from functools import partial
+from tensorflow.keras.layers import Layer
 
 from pdb import set_trace
 
+
 class WGANGP:
-    def __init__(self, job_config, hp_config, logger):
+    def __init__(self, job_config, hp_config, logger, config_string=None):
         tf.keras.backend.set_floatx("float32")
         self.loading = job_config.get('loading', None)
+        if config_string:
+            self.set_special_config(config_string)
         
         self.model = hp_config.get('model', 'BNswish') # default to photon GAN BNswish
         self.dmodel = hp_config.get('dmodel', 'dense')
@@ -170,6 +174,32 @@ class WGANGP:
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
             G = layers.Activation(activations.swish)(G)
+        elif self.model == "BNReLUCustActiv":
+            G = layers.Dense(self.generatorLayers[0], kernel_initializer=initializer, bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.ReLU()(G)
+            G = layers.Dense(self.generatorLayers[1], kernel_initializer=initializer, bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.ReLU()(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.ReLU()(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = CustomActivationLayer(self.subsets)(G)
+        elif self.model == "BNswishCustActiv":
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = CustomActivationLayer(self.subsets)(G)
         elif self.model == "BNswishReLU":
             initializer = tf.keras.initializers.glorot_normal()
             G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
@@ -328,6 +358,20 @@ class WGANGP:
         self.nvoxels_per_layer = tf.convert_to_tensor([int(i) for i in layer_info[-1].split(':')])
         self.edges = [tf.reduce_sum(self.nvoxels_per_layer[:i]) for i in range(self.nlayers+1)]
 
+        # group nodes that belong to the same layer
+        voxel_lists = [[self.edges[i] + j for j in range(self.nvoxels_per_layer[i])] for i in range(self.nlayers)]
+        # group nodes that belong to the layer information
+        voxel_lists.append([self.edges[-1] + j for j in range(self.nlayers)])
+        # group the last nodes that is the total energy
+        voxel_lists.append([self.edges[-1] + self.nlayers])
+
+        # construct activation list, First n sets, apply softmax, Last 1 set, apply sigmoid
+        activation_list = [tf.nn.softmax] * (len(voxel_lists) - 1)
+        activation_list.append(tf.nn.sigmoid)
+
+        self.subsets = list(zip(voxel_lists, activation_list))
+
+
     @tf.function
     def manipulate_x_fake(self, x_fake):
         layer_E_from_voxel = []
@@ -361,7 +405,7 @@ class WGANGP:
             z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
             logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
         x_fake = self.G(inputs=[z, cond_label])
-        if self.special_config == 'normlayer':
+        if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
 
         D_fake = self.D(tf.concat([x_fake, cond_label], 1))
@@ -451,7 +495,7 @@ class WGANGP:
                     meta_data['Gloss'].append(float(G_loss_curr))
                     meta_data['Dloss'].append(float(D_loss_curr))
 
-                    logging.info(f"Iter: {iteration}; D loss: {D_loss_curr:.4f}; G_loss: {G_loss_curr:.4f}; TotalTime: {time_diff:.2f}; GetNext: {dur_getnext_loop:.4f}, ConvertLoop: {dur_convert_loop:.2f}, TrainLoop: {dur_train_loop:.2f}, Save: {save_time:.2}")
+                    logging.info(f"Iter: {iteration}; Dloss: {D_loss_curr:.4f}; Gloss: {G_loss_curr:.4f}; TotalTime: {time_diff:.2f}; GetNext: {dur_getnext_loop:.4f}, ConvertLoop: {dur_convert_loop:.2f}, TrainLoop: {dur_train_loop:.2f}, Save: {save_time:.2}")
                     self.plot_loss(verbose='ERROR')
                     dur_train_loop, dur_convert_loop, dur_getnext_loop = 0, 0, 0
 
@@ -511,11 +555,30 @@ class WGANGP:
             return 0
         z = tf.random.normal([labels.shape[0], self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
         x_fake = self.G(inputs=[z, labels])
-        if self.special_config == 'normlayer':
+        if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
             x_fake = x_fake[:, :-self.nlayers]
         return x_fake
 
+
+class CustomActivationLayer(Layer):
+    def __init__(self, subsets):
+        super(CustomActivationLayer, self).__init__()
+        self.subsets = subsets
+
+    def call(self, inputs):
+        outputs = []
+
+        for subset in self.subsets:
+            subset_indices = subset[0]
+            activation_func = subset[1]
+
+            subset_input = tf.gather(inputs, subset_indices, axis=1)
+            subset_output = activation_func(subset_input)
+            outputs.append(subset_output)
+
+        # Concatenate the subset outputs and return the result
+        return tf.concat(outputs, axis=1)
 
 class SpectralNorm(Wrapper):
 
