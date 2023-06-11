@@ -1,0 +1,5 @@
+{
+    "G_size": 1,
+    "D_size": 2,
+    "dmodel": "spectral_norm"
+}
