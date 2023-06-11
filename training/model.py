@@ -199,6 +199,7 @@ class WGANGP:
             G = layers.Activation(activations.swish)(G)
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
+            #G = layers.ReLU()(G) # make sure output is positive
             G = CustomActivationLayer(self.subsets)(G)
         elif self.model == "BNswishReLU":
             initializer = tf.keras.initializers.glorot_normal()
@@ -352,14 +353,23 @@ class WGANGP:
 
     def set_special_config(self, config_string):
         layer_info = config_string.split('__')
+        merge_layer = False
+        if 'mergelayer' in layer_info[-1]:
+            layer_info.pop(-1)
+            merge_layer = True
         
         self.special_config = layer_info[0]
         self.nlayers = int(layer_info[-2])
         self.nvoxels_per_layer = tf.convert_to_tensor([int(i) for i in layer_info[-1].split(':')])
         self.edges = [tf.reduce_sum(self.nvoxels_per_layer[:i]) for i in range(self.nlayers+1)]
 
-        # group nodes that belong to the same layer
-        voxel_lists = [[self.edges[i] + j for j in range(self.nvoxels_per_layer[i])] for i in range(self.nlayers)]
+        if merge_layer:
+            # group nodes from all layer
+            voxel_lists = [list(range(self.edges[-1]))]
+        else:
+            # group nodes that belong to the same layer
+            voxel_lists = [[self.edges[i] + j for j in range(self.nvoxels_per_layer[i])] for i in range(self.nlayers)]
+
         # group nodes that belong to the layer information
         voxel_lists.append([self.edges[-1] + j for j in range(self.nlayers)])
         # group the last nodes that is the total energy
@@ -561,25 +571,6 @@ class WGANGP:
         return x_fake
 
 
-class CustomActivationLayer(Layer):
-    def __init__(self, subsets):
-        super(CustomActivationLayer, self).__init__()
-        self.subsets = subsets
-
-    def call(self, inputs):
-        outputs = []
-
-        for subset in self.subsets:
-            subset_indices = subset[0]
-            activation_func = subset[1]
-
-            subset_input = tf.gather(inputs, subset_indices, axis=1)
-            subset_output = activation_func(subset_input)
-            outputs.append(subset_output)
-
-        # Concatenate the subset outputs and return the result
-        return tf.concat(outputs, axis=1)
-
 class SpectralNorm(Wrapper):
 
     def __init__(self, layer, iteration=1, **kwargs):
@@ -628,3 +619,19 @@ class SpectralNorm(Wrapper):
     def compute_output_shape(self, input_shape):
         return tf.TensorShape(self.layer.compute_output_shape(input_shape).as_list())
 
+
+class CustomActivationLayer(Layer):
+    def __init__(self, subsets):
+        super(CustomActivationLayer, self).__init__()
+        self.subsets = subsets
+
+    def call(self, inputs):
+        subset_indices = [subset[0] for subset in self.subsets]
+        activation_funcs = [subset[1] for subset in self.subsets]
+
+        subset_inputs = [tf.gather(inputs, subset_indice, axis=1) for subset_indice in subset_indices]
+
+        subset_outputs = [activation_func(subset_input) for subset_input, activation_func in zip(subset_inputs, activation_funcs)]
+        
+        # Concatenate the subset outputs and return the result
+        return tf.concat(subset_outputs, axis=1)

@@ -73,10 +73,12 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
         kin = kin.reshape(-1,1)
 
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
-    if args.preprocess in ['normlayer1', 'normlayer2']:
+    if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3']:
         from XMLHandler import XMLHandler
         xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
         config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
+        if args.preprocess in ['normlayer3']:
+            config_string += '__mergelayer'
     else:
         config_string = None
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
@@ -88,7 +90,7 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             ): # log10.x, scale.x, slope
             scale = os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', f'scale_{preprocess}.json')
             E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=scale)
-        elif preprocess in ['concatlayer', 'normlayer1', 'normlayer2']:
+        elif preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3']:
             from XMLHandler import XMLHandler
             xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
             E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=None, xml=xml)
