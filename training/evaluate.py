@@ -55,7 +55,7 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     categories, vector_list = split_energy(kin, vector)
     if return_E_vox:
-        return categories, vector_list, E_vox, Y_train
+        return categories, vector_list, vector, Y_train
     if normalise:
         return categories, vector_list, Y_train
     return categories, vector_list
@@ -142,7 +142,7 @@ def plot_energy_layer(particle, model_i, input_file_name, train_path, eta_slice)
         return [concate.flatten()]
 
     suffix = '_load' if args.loading else ''
-    categories1, E_gan_list = get_E_gan(model_i, input_file_name=input_file_name, train_path=train_path, eta_slice=eta_slice, mode='layer', suffix=suffix)
+    categories1, E_gan_list = get_E_gan(model_i, input_file_name=input_file_name, train_path=train_path, eta_slice=eta_slice, preprocess=args.preprocess, mode='layer', suffix=suffix)
     categories2, E_vox_list = get_E_truth(input_file_name, mode='layer')
 
     E_vox_list_merge_energy, E_gan_list_merge_energy = {}, {}
@@ -402,8 +402,8 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
                 logx=True, particle=particle, output=vox_name.replace('.pdf', '_normkin_logx.pdf'), draw_ref=False, xlabel="$-$" + f"Log({xlabel})")
     
         layer_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected', 'layer')
-        if not os.path.exists(layer_folder) or len(os.listdir(layer_folder)) == 0:
-            plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
+        #if not os.path.exists(layer_folder) or len(os.listdir(layer_folder)) == 0:
+        #    plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
         plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
 
         if args.save_h5:
