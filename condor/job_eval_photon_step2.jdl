@@ -18,15 +18,16 @@ OnExitRemove         = TRUE
 request_CPUs = 6
 Request_memory = 12 GB
 Request_disk   = 5 GB
+train_eval = evaluate
 
 #####         task=$1         input=$2                         output=model_config
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.1-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.1-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
 #Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.2-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.2-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
 #Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.3-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.3-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
 #Queue 1
-#Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.4-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4.4-M1 --loading=../output/dataset1/v2/BNswish_hpo4-M1/photons_eta_20_25/selected/model-733
 #Queue 1
-Arguments = evaluate ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lindex --loading=../output/dataset1/v2/BNswish_hpo4-M1-P-Lindex/photons_eta_20_25/selected/model-974
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lindex --loading=../output/dataset1/v2/BNswish_hpo4-M1-P-Lindex/photons_eta_20_25/selected/model-974
 Queue 1

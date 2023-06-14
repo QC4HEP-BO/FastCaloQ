@@ -12,6 +12,7 @@ notification    = always
 stream_output   = False
 stream_error    = False
 Requirements = ((Arch == "X86_64") && (regexp("CentOS7",OpSysAndVer)))
+#Requirements = TARGET.OpSysAndVer =?= "AlmaLinux9"
 WhenToTransferOutput = ON_EXIT_OR_EVICT
 OnExitRemove         = TRUE
 +JobFlavour = "testmatch"
@@ -20,7 +21,8 @@ request_GPUs = 1
 request_CPUs = 4
 Request_memory = 8 GB
 Request_disk   = 4 GB
+train_eval = train
 
-Arguments = train ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1-debug
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1-debug
 
 Queue 1

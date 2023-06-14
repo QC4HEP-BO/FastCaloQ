@@ -53,7 +53,14 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
         vector /= Y_train
     kin = get_kin(input_file_name, label=True) # added in DS2
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
-    categories, vector_list = split_energy(kin, vector)
+    if 'dataset2' in input_file_name:
+        categories, vector_list = split_energy(kin, vector)
+    elif 'dataset1' in input_file_name and 'pion' in particle:
+        categories, vector_list = split_energy(input_file['incident_energies'], vector)
+    elif 'dataset1' in input_file_name and 'photon' in particle:
+        categories, vector_list = split_energy(kin, vector)
+    else:
+        raise NotImplementedError("This feature is not implemented yet.")
     if return_E_vox:
         return categories, vector_list, vector, Y_train
     if normalise:
@@ -130,7 +137,14 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     if 'dataset2' in input_file_name:
         kin = get_kin(input_file_name, label=True) # added in DS2
         kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
-    categories, vector_list = split_energy(kin, vector)
+    if 'dataset2' in input_file_name:
+        categories, vector_list = split_energy(kin, vector)
+    elif 'dataset1' in input_file_name and 'pion' in particle:
+        categories, vector_list = split_energy(input_file['incident_energies'], vector)
+    elif 'dataset1' in input_file_name and 'photon' in particle:
+        categories, vector_list = split_energy(kin, vector)
+    else:
+        raise NotImplementedError("This feature is not implemented yet.")
     if return_E_vox:
         return categories, vector_list, E_vox
     return categories, vector_list
@@ -292,7 +306,7 @@ def plot_model_i(args, model_i):
     plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{model_i}.pdf')
     if os.path.exists(df_name) and os.path.exists(plot_name):
         df = pd.read_csv(df_name)
-        if model_i in df['ckpt'].values:
+        if not args.debug and model_i in df['ckpt'].values:
             chi2_results = df[df['ckpt'] == model_i].to_dict(orient='records')[0]
             print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'chi2', chi2_results['All'])
             return chi2_results
@@ -384,7 +398,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"])}_all.pdf')
     if not (os.path.exists(vox_name) and mask_cache):
         # Plot 'masking' distribution; 'masking' means to remove voxel energies below a threshold of 1keV or 1MeV
-        categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', suffix=suffix, return_E_vox=True)
+        categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, mode='voxel', suffix=suffix, return_E_vox=True)
         categories, E_tru_list, E_tru_vox, E_incident = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
         #kin, particle = get_kin(args.input_file) # for DS1
         kin = get_kin(args.input_file, label=True) # added in DS2

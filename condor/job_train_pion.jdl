@@ -20,212 +20,217 @@ request_GPUs = 1
 request_CPUs = 4
 Request_memory = 8 GB
 Request_disk   = 4 GB
+train_eval = train
 
 ###         task=$1         input=$2                         output=model_config
 #Arguments = evaluate ../input/dataset1/dataset_1_pions_1.hdf5   GANv1_GANv1-wrong
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   GANv1_GANv1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   GANv1_GANv1
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_GANv2
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_GANv2
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_GANv2
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_GANv2
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswishHe_GANv2
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswishHe_GANv2
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   SN_GANv2
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   SN_GANv2
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_GANv2
-#Queue 1
-
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo2
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo3
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo4
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo6
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo7
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo11
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo2
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo3
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo4
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo6
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo7
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo11
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo2
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo3
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo4
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo6
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo7
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo11
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_GANv2
 #Queue 1
 
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M10000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo1
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo2
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M100
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo3
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M10
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo4
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo5
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo6
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn100
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo7
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn10
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_hpo11
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo1
 #Queue 1
-
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M10000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo2
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo3
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M100
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo4
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M10
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo5
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo6
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo7
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn100
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_hpo11
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn10
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo1
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo2
 #Queue 1
-
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo12
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo3
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo13
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo4
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo14-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo5
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo15-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo6
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo16-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo7
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo17
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.10
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.10
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo19-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo20-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo21-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo22-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.0.5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.0.5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.0.8
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.0.8
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.0.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.0.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pscale.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Pscale.1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pscale.0.5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Pscale.0.5
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Pslope.30
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pslope.30
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_hpo11
 #Queue 1
 
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M10000
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-Mn1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1000
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-M1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M100
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-Mn1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M10
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo23-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo23-Mn1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1000
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn100
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-Mn1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn10
 #Queue 1
-
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-Mn1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-M1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-Mn1
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-M1000
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-Mn1000
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1000
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-M1000
-#Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-Mn1000
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1
 #Queue 1
 
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M10000
 #Queue 1
-#Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-Mn1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M1000
 #Queue 1
-Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M100
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn100
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-Mn1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo13
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo14-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo15-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo16-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo17
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo19-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo20-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo21-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo22-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.0.8
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.0.8
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Plog10.0.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Plog10.0.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pscale.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Pscale.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pscale.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Pscale.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1-Pslope.30
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pslope.30
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-M1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-Mn1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo23-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo23-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-Mn1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-M1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo28-Mn1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-M1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-Mn1000
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
+#Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M1-Pnormlayer3
 Queue 1
-Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1
-Queue 1
-Arguments = train ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer3
 Queue 1

@@ -199,7 +199,6 @@ class WGANGP:
             G = layers.Activation(activations.swish)(G)
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.BatchNormalization()(G)
-            #G = layers.ReLU()(G) # make sure output is positive
             G = CustomActivationLayer(self.subsets)(G)
         elif self.model == "BNswishReLU":
             initializer = tf.keras.initializers.glorot_normal()
