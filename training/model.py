@@ -374,9 +374,9 @@ class WGANGP:
         # group the last nodes that is the total energy
         voxel_lists.append([self.edges[-1] + self.nlayers])
 
-        # construct activation list, First n sets, apply softmax, Last 1 set, apply sigmoid
+        # construct activation list, First n sets, apply softmax, Last 1 set, apply relu
         activation_list = [tf.nn.softmax] * (len(voxel_lists) - 1)
-        activation_list.append(tf.nn.sigmoid)
+        activation_list.append(tf.nn.relu)
 
         self.subsets = list(zip(voxel_lists, activation_list))
 

@@ -230,7 +230,9 @@ train_eval = train
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
 #Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M1-Pnormlayer3
-Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer3
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M1-Pnormlayer3.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer3.2
+#Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.1
 Queue 1

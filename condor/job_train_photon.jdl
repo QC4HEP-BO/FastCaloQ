@@ -331,7 +331,14 @@ train_eval = train
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo116-M-Pnormlayer3-L-Sge18.1
 #Queue 1
 
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-Sle12.1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-Sle12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-ge12le18.2
+#Queue 1
+
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-Sle12.1
 Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-ge12le18.1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-ge12le18.1
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-ge18.1
 Queue 1

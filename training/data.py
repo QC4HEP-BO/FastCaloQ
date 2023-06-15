@@ -18,6 +18,7 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
         elif name in ['normlayer2']:
             # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
             import tensorflow as tf
+            X_train[X_train == 0] = 0.0001
             bin_edges = xml.GetBinEdges()
             E_layers = []
             for layer in xml.GetRelevantLayers():
@@ -37,6 +38,7 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
         elif name in ['normlayer3']:
             # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
             import tensorflow as tf
+            X_train[X_train == 0] = 0.0001
             bin_edges = xml.GetBinEdges()
             E_layers = []
             for layer in xml.GetRelevantLayers():

@@ -40,7 +40,7 @@ fi
 
 if [[ ! -z "$prep" ]]; then
     train_addition="$train_addition -p $prep"
-    evaluate_addition="-p $prep"
+    evaluate_addition="$evaluate_addition -p $prep"
 fi
 
 if [[ ! -z "$loading" ]]; then
