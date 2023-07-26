@@ -563,6 +563,8 @@ class WGANGP:
         if ischeck:
             return 0
         z = tf.random.normal([labels.shape[0], self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
+        if self.conditional_dim == 2 and labels.shape[1] == 1:
+            labels = tf.concat([labels, tf.zeros_like(labels)], axis=1)
         x_fake = self.G(inputs=[z, labels])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
