@@ -15,7 +15,7 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             E_layers = np.concatenate(E_layers, axis=1)
             X_train = np.concatenate([X_train, E_layers], axis=1)
             return X_train
-        elif name in ['normlayer2']:
+        elif name in ['normlayer2', 'normlayerMichele']:
             # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
             import tensorflow as tf
             X_train[X_train == 0] = 0.0001
@@ -125,7 +125,7 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             X_train = X_train[:, :X_train.shape[1] - len(xml.GetRelevantLayers())] # drop the last xml.GetRelevantLayers() columns
             X_train *= kin
             return X_train
-        elif name in ['normlayer2']:
+        elif name in ['normlayer2', 'normlayerMichele']:
             import tensorflow as tf
             E_shower = tf.reshape(X_train[:, -1], (-1, 1))
             E_shower *= kin

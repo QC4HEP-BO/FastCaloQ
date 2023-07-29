@@ -97,6 +97,7 @@ def main(args):
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
     #hlf = HighLevelFeatures(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
     print('\033[92m[INFO] Run\033[0m', particle, input_file)
+    print(f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
     
     # loading the .hdf5 datasets
     input_data = h5py.File(f'{input_file}', 'r')
@@ -129,7 +130,7 @@ def main(args):
                 or re.compile("^slope.([0-9.]+)+$").match(args.preprocess)
             ): # log10.x, scale.x, slope
             X_train, scale = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file)
-        elif args.preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3']:
+        elif args.preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele']:
             from XMLHandler import XMLHandler
             xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
             shower_shape = X_train.shape
@@ -220,7 +221,7 @@ def main(args):
         'loading': args.loading,
     }
 
-    if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3']:
+    if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele']:
         config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
         if args.preprocess in ['normlayer3']:
             config_string += '__mergelayer'
