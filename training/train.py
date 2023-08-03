@@ -97,7 +97,6 @@ def main(args):
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
     #hlf = HighLevelFeatures(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
     print('\033[92m[INFO] Run\033[0m', particle, input_file)
-    print(f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
     
     # loading the .hdf5 datasets
     input_data = h5py.File(f'{input_file}', 'r')
