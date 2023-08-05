@@ -347,5 +347,9 @@ train_eval = evaluate
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-Sge12
 #Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo117-M-Pnormlayer2-L-ge18.1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo117-M-Pnormlayer2-L-ge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.1
+#Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.Michele
 Queue 1
