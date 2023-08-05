@@ -15,10 +15,11 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             E_layers = np.concatenate(E_layers, axis=1)
             X_train = np.concatenate([X_train, E_layers], axis=1)
             return X_train
-        elif name in ['normlayer2', 'normlayerMichele2']: # normlayerMichele is only to reproduce Michele's model, I never trained it
+        elif name in ['normlayer2', 'normlayerMichele2']:
             # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
             import tensorflow as tf
-            X_train[X_train == 0] = 0.0001
+            #X_train[X_train == 0] = 0.0001
+            X_train[X_train <= 1e-6] = 1e-6
             bin_edges = xml.GetBinEdges()
             E_layers = []
             for layer in xml.GetRelevantLayers():
@@ -35,9 +36,9 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             E_truth = np.full((X_train.shape[0], 1), E_shower/kin)
             X_train = np.concatenate([X_train, E_layers, E_truth], axis=1)
             return X_train
-        elif name in ['normlayerMichele']:
+        elif name in ['normlayerMichele']: # normlayerMichele is to reproduce Michele's model
             import tensorflow as tf
-            #X_train[X_train == 0] = 0.0001
+            X_train[X_train <= 1e-6] = 1e-6
             bin_edges = xml.GetBinEdges()
             E_layers = []
             for layer in xml.GetRelevantLayers():

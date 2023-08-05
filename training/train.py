@@ -129,7 +129,7 @@ def main(args):
                 or re.compile("^slope.([0-9.]+)+$").match(args.preprocess)
             ): # log10.x, scale.x, slope
             X_train, scale = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file)
-        elif args.preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele']:
+        elif args.preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
             from XMLHandler import XMLHandler
             xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
             shower_shape = X_train.shape
@@ -220,7 +220,7 @@ def main(args):
         'loading': args.loading,
     }
 
-    if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele']:
+    if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
         config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
         if args.preprocess in ['normlayer3']:
             config_string += '__mergelayer'
