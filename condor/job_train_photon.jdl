@@ -351,7 +351,13 @@ train_eval = train
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.1
 #Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.2
+
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.2 # X_train[X_train <= 1e-6] = 1e-6
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.1 # X_train[X_train <= 1e-6] = 1e-6
+#Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.3 # X_train[X_train == 0] = 0.0001
 Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.2 # X_train[X_train == 0] = 0.0001
 Queue 1
