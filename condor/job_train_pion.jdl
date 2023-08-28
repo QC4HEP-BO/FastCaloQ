@@ -1,6 +1,5 @@
 #Agent jdl file
 Universe        = vanilla
-Notification    = Never
 initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
 Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
 GetEnv          = True
@@ -11,7 +10,7 @@ notify_user     = rui.zhang@cern.ch
 notification    = always
 stream_output   = False
 stream_error    = False
-Requirements = ((Arch == "X86_64") && (regexp("CentOS7",OpSysAndVer)))
+Requirements = (Arch == "X86_64")
 WhenToTransferOutput = ON_EXIT_OR_EVICT
 OnExitRemove         = TRUE
 +JobFlavour = "testmatch"
@@ -234,5 +233,14 @@ train_eval = train
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer3.2
 #Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.2
+#Queue 1
+
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.3
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.4
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.2
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.3
 Queue 1

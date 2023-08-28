@@ -1,12 +1,12 @@
 #Agent jdl file
 Universe        = vanilla
-Notification    = Never
 initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
 Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
 GetEnv          = True
 Error           = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).err
 Log             = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).log
 Output          = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).out
+Notification    = Never
 stream_output   = False
 stream_error    = False
 Requirements = ((Arch == "X86_64") && (regexp("CentOS7",OpSysAndVer)))
@@ -105,7 +105,7 @@ train_eval = evaluate
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-Mn1
 #Queue 1
-#
+
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M10000
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 noBN_hpo4-M1000
@@ -177,6 +177,7 @@ train_eval = evaluate
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo4-M1-Pslope.30
 #Queue 1
+
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-M1
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo24-Mn1
@@ -218,9 +219,29 @@ train_eval = evaluate
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo30-Mn1000
 #Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo29-M1000
+#Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M1-Pnormlayer3.2
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer3.2
 #Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.2
+#Queue 1
+
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.3
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.4
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.2
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.3
 Queue 1

@@ -1,12 +1,12 @@
 #Agent jdl file
 Universe        = vanilla
-Notification    = Never
 initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
 Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
 GetEnv          = True
 Error           = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).err
 Log             = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).log
 Output          = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).out
+Notification    = Never
 
 
 stream_output   = False
@@ -353,7 +353,23 @@ train_eval = evaluate
 #Queue 1
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.Michele
 #Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.2
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.3 # X_train[X_train == 0] = 0.0001
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.2 # X_train[X_train == 0] = 0.0001
+#Queue 1
+
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo113-M-Pnormlayer2-L-Sle12.1
 Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.4
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.5
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12.3
+Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12le18.3
 Queue 1
