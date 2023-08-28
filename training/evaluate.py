@@ -355,27 +355,33 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         categories = [float(i.replace(remove, '')) for i in df if remove in i and alt in i]
         categories = [round(num) for num in categories if str(num)[-1] == '0']
         chi2_list = [df[f'{c} MeV{alt}'].values for c in categories]
-        fig, axes = plot_frame(categories + ['All energies'], xlabel="Iterations", ylabel="$\chi^{2}$/NDF", add_summary_panel=False)
+        fig, axes = plot_frame(categories + ['All energies'], xlabel="Iterations", ylabel="$\chi^{2}$/NDF", label_pos='right', add_summary_panel=False)
+        leg_loc, leg_size = (0.52, 0.72), 12
+        markersize = 10
         for index, energy in enumerate(categories):
             ax = axes[index]
-            ax.scatter(x, chi2_list[index], facecolor='none', edgecolors="k", alpha=0.9)
+            ax.scatter(x, chi2_list[index], s=markersize, facecolor='none', edgecolors="k", alpha=0.9)
             best_x_i = int(df[df[f'{energy} MeV{alt}'] == df[f'{energy} MeV{alt}'].min()]['ckpt'] * 1000)
             best_y_i = df[f'{energy} MeV{alt}'].min()
             try:
                 best_y_j = float(df[df['ckpt']==int(best_x/1000)][f'{energy} MeV{alt}'])
             except:
                 set_trace()
-            ax.scatter(best_x_i, best_y_i, c="orange")
-            ax.scatter(best_x, best_y_j, c="r")
-            ax.text(0.98, 0.97, "Iter {}\n$\chi^2$ = {:.1f}\nSel. iter {}\n$\chi^2$ = {:.1f}".format(best_x_i, best_y_i, best_x, best_y_j), transform=ax.transAxes, va="top", ha="right", fontsize=10, bbox=dict(facecolor='w', alpha=0.8, edgecolor='w'))
+            ax.scatter(best_x_i, best_y_i, s=markersize*4, c="orange", label="Local min.")
+            ax.scatter(best_x, best_y_j, s=markersize*4, c="r", label="Selected")
+            #ax.text(0.98, 0.97, "Iter {}\n$\chi^2$ = {:.1f}\nSel. iter {}\n$\chi^2$ = {:.1f}".format(best_x_i, best_y_i, best_x, best_y_j), transform=ax.transAxes, va="top", ha="right", fontsize=10, bbox=dict(facecolor='w', alpha=0.8, edgecolor='w'))
+            #ax.legend(loc=leg_loc, frameon=True, fontsize=leg_size)
             ymin, ymax = ax.get_ylim()
             ax.set_ylim(max(0, ymin), min(50, ymax))
 
         ax = axes[-1]
-        ax.scatter(x, y, facecolor='none', edgecolors="k", alpha=0.9)
-        ax.scatter(best_x, best_y, c="r")
+        ax.scatter(x, y, s=markersize, facecolor='none', edgecolors="k", alpha=0.9)
+        ax.scatter(best_x, best_y, s=markersize*4, c="orange", label="Local min.")
+        ax.scatter(best_x, best_y, s=markersize*4, c="r", label='Selected')
         eta_min, eta_max = tuple(args.eta_slice.split('_'))
-        ax.text(0.98, 0.98, particle_latex_name(particle) + "\n" + str("{:.2f}".format(int(eta_min) / 100, 2)) + r"$<|\eta|<$" + str("{:.2f}\n".format((int(eta_min) + 5) / 100, 2)) + "Iter {}\n$\chi^2$ = {:.1f}".format(best_x, best_y), transform=ax.transAxes, va="top", ha="right", fontsize=15, bbox=dict(facecolor='w', alpha=0.8, edgecolor='w'))
+        #ax.text(0.98, 0.98, particle_latex_name(particle) + "\n" + str("{:.2f}".format(int(eta_min) / 100, 2)) + r"$<|\eta|<$" + str("{:.2f}\n".format((int(eta_min) + 5) / 100, 2)) + "Iter {}\n$\chi^2$ = {:.1f}".format(best_x, best_y), transform=ax.transAxes, va="top", ha="right", fontsize=15, bbox=dict(facecolor='w', alpha=0.8, edgecolor='w'))
+        ax.legend(loc=leg_loc, frameon=True, fontsize=leg_size)
+
         ymin, ymax = ax.get_ylim()
         ax.set_ylim(max(0, ymin), min(50, ymax))
         plt.tight_layout()
