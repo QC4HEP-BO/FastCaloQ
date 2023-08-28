@@ -374,7 +374,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
             ymin, ymax = ax.get_ylim()
             ax.set_ylim(max(0, ymin), min(50, ymax))
 
-        ax = axes[-1]
+        ax = axes[index+1]
         ax.scatter(x, y, s=markersize, facecolor='none', edgecolors="k", alpha=0.9)
         ax.scatter(best_x, best_y, s=markersize*4, c="orange", label="Local min.")
         ax.scatter(best_x, best_y, s=markersize*4, c="r", label='Selected')
