@@ -67,7 +67,7 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
         return categories, vector_list, Y_train
     return categories, vector_list
 
-def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False, normalise_by=None):
+def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False, normalise_by=None, istiming=False):
     kin, particle = get_kin(input_file_name)
     input_file = h5py.File(f'{input_file_name}', 'r')
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
@@ -89,7 +89,9 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     else:
         config_string = None
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
-    E_vox = wgan.predict(model_i=model_i, labels=label_kin)
+    E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming)
+    if istiming:
+        return
     if preprocess is not None:
         if (re.compile("^log10.([0-9.]+)+$").match(preprocess) \
                 or re.compile("^scale.([0-9.]+)+$").match(preprocess) \
@@ -404,7 +406,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"])}_all.pdf')
     if not (os.path.exists(vox_name) and mask_cache):
         # Plot 'masking' distribution; 'masking' means to remove voxel energies below a threshold of 1keV or 1MeV
-        categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, mode='voxel', suffix=suffix, return_E_vox=True)
+        categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, mode='voxel', suffix=suffix, return_E_vox=True, istiming=args.istiming)
         categories, E_tru_list, E_tru_vox, E_incident = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
         #kin, particle = get_kin(args.input_file) # for DS1
         kin = get_kin(args.input_file, label=True) # added in DS2
@@ -434,6 +436,18 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
                 gen_h5(E_incident, E_gan_vox, output_h5)
             else:
                 print('Skip', output_h5)
+        if args.convert:
+            config = json.load(open(os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'train', 'config.json')))
+            if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
+                from XMLHandler import XMLHandler
+                xml = XMLHandler(particle, filename=f'{os.path.dirname(args.input_file)}/binning_dataset_1_{particle}s.xml')
+                config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
+                if args.preprocess in ['normlayer3']:
+                    config_string += '__mergelayer'
+            else:
+                config_string = None
+            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
+            wgan.convert_model(int(best_x/1000))
 
 def gen_h5(energies, showers, output):
     dataset_file = h5py.File(output, 'w')
@@ -533,10 +547,10 @@ def main(args):
     for models in chunks:
         arguments = (repeat(args), models)
         if 'dataset1' in args.input_file:
-            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
+            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if (args.debug and not args.istiming) else -1)
             filename = f'chi2.csv'
         elif 'dataset2' in args.input_file:
-            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if args.debug else -1)
+            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if (args.debug and not args.istiming) else -1)
             filename = f'classifier.csv'
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
         df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], filename)
@@ -564,6 +578,7 @@ if __name__ == '__main__':
     parser.add_argument('--normalise', required=False, action='store_true', help='Plot E_gan/E_truth (default: %(default)s)')
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Load model (default: %(default)s)')
     parser.add_argument('--save_h5', required=False, action='store_true', help='Save H5 https://calochallenge.github.io/homepage/ (default: %(default)s)')
-
+    parser.add_argument('--istiming', required=False, nargs='+', default=False, help='Measure timing: a tuple of three: batch, Ekin, trials (default: %(default)s)')
+    parser.add_argument('--convert', required=False, action='store_true', help='Convert best model to lwtnn (default: %(default)s)')
     args = parser.parse_args()
     main(args)

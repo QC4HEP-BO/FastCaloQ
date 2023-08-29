@@ -603,7 +603,7 @@ class WGANGP:
         if verbose == 'INFO':
             logging.info('Save to %s', os.path.join(self.train_folder, 'loss.pdf'))
 
-    def predict(self, model_i, labels, ischeck=False):
+    def predict(self, model_i, labels, ischeck=False, istiming=False):
         checkpoint_dir = os.path.join(self.output, 'checkpoints')
         self.saver.restore(f'{checkpoint_dir}/model-{model_i}').expect_partial()
         if ischeck:
@@ -611,12 +611,32 @@ class WGANGP:
         z = tf.random.normal([labels.shape[0], self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
         if self.conditional_dim == 2 and labels.shape[1] == 1:
             labels = tf.concat([labels, tf.zeros_like(labels)], axis=1)
+        if istiming:
+            batch, Ekin, ntrials = int(istiming[0]), int(istiming[1]), int(istiming[2])
+            times = []
+            for i in range(ntrials):
+                start = time.time()
+                x_fake = self.G(inputs=[z[:batch], np.full((batch,) + labels.shape[1:], np.unique(labels)[Ekin])])
+                times.append(time.time() - start)
+            print('batch', batch, 'Ekin', Ekin, 'averaged_over', ntrials, 'mean', np.mean(times)*1000, 'std', np.std(times)*1000, 'ms', times)
+            return
         x_fake = self.G(inputs=[z, labels])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
             x_fake = x_fake[:, :-self.nlayers]
         return x_fake
 
+    def convert_model(self, model_i):
+        checkpoint_dir = os.path.join(self.output, 'checkpoints')
+        self.saver.restore(f'{checkpoint_dir}/model-{model_i}').expect_partial()
+
+        convert_dir = os.path.join(self.output, 'convert')
+        os.makedirs(convert_dir, exist_ok=True)
+        self.G.save_weights(convert_dir + "/lwtnn_%s_eta_%s.h5" % (self.particle, self.eta_slice))
+        generator_model_json = self.G.to_json()
+        with open(convert_dir + "/lwtnn_%s_eta_%s.json" % (self.particle, self.eta_slice), "w") as json_file:
+            json_file.write(generator_model_json)
+        print('Save to', convert_dir + "/lwtnn_%s_eta_%s.json" % (self.particle, self.eta_slice))
 
 class SpectralNorm(Wrapper):
 
@@ -671,6 +691,14 @@ class CustomActivationLayer(Layer):
     def __init__(self, subsets):
         super(CustomActivationLayer, self).__init__()
         self.subsets = subsets
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'subsets': 1,
+        })
+        print('\033[91m[FATAL] Save to\033[0m', 'converted JSON is not usable because of the special implementation', __class__)
+        return config
 
     def call(self, inputs):
         subset_indices = [subset[0] for subset in self.subsets]
