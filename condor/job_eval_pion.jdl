@@ -237,11 +237,13 @@ train_eval = evaluate
 #Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.2
 #Queue 1
 
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.3
-Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.4
-Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.2
-Queue 1
-Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.3
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.4
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLU_hpo27-M1.3
+#Queue 1
+Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 BNReLUCustActiv_hpo27-M-Pnormlayer2.5
 Queue 1
