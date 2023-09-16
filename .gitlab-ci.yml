@@ -1,4 +1,4 @@
-build mlfastcaloganv2:
+build mlcaloshowergan:
     image: 
         name: gitlab-registry.cern.ch/ci-tools/docker-image-builder
         entrypoint: [""]
@@ -7,4 +7,4 @@ build mlfastcaloganv2:
         GIT_SUBMODULE_STRATEGY: recursive
     script:
         - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/docker/fastcaloganv2/Dockerfile --destination $CI_REGISTRY_IMAGE:CaloShowerGAN
+        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/docker/Dockerfile --destination $CI_REGISTRY_IMAGE:CaloShowerGAN
