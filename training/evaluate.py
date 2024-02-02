@@ -305,7 +305,7 @@ def plot_model_i(args, model_i):
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
     suffix = '_load' if args.loading else ''
     df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
-    plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{model_i}.pdf')
+    plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{model_i}.png')
     if os.path.exists(df_name) and os.path.exists(plot_name):
         df = pd.read_csv(df_name)
         if not args.debug and model_i in df['ckpt'].values:
