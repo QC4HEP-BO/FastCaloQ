@@ -91,7 +91,7 @@ def kin_to_label(kin, scheme='log_ratio'):
 
 def get_energies(input_file, label=False):
     input_file = h5py.File(f'{input_file}', 'r')
-    energies = input_file['incident_energies'][:]
+    energies = input_file['incident_energy'][:]
     if np.all(np.mod(energies, 1) == 0):
         energies = energies.astype(int)
     else:
@@ -103,11 +103,11 @@ def get_kin(input_file, label = False):
     particle = input_file.split('/')[-1].split('_')[-2][:-1]
     input_file = h5py.File(f'{input_file}', 'r')
     mass = particle_mass(particle)
-    energies = input_file['incident_energies'][:]
+    energies = input_file['incident_energy'][:]
     kin = np.sqrt( np.square(energies) + np.square(mass) ) - mass
     if label == True: # when energies are not integral (dataset 2&3 in calochallenge, return digitised labels
         return np.log2(energies).astype(int)
-    return kin, particle
+    return kin.reshape(-1, 1), particle
 
 def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=True):
     if len(categories) == 1:

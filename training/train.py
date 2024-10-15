@@ -37,7 +37,7 @@ def apply_mask(mask, X_train, input_file, add_noise=False):
 
     kin, particle = get_kin(args.input_file)
     input_data = h5py.File(f'{input_file}', 'r')
-    kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
+    kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     categories, vector_list  = split_energy(kin, event_energy)
     fig, axes = plot_frame(categories, xlabel="Rel. change in E total", ylabel="Events")
     for index, energy in enumerate(categories):
@@ -103,7 +103,7 @@ def main(args):
     
     energies = get_energies(input_file)
     kin, particle = get_kin(input_file)
-    kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
+    kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     if args.label_scheme:
         label_scheme = args.label_scheme
     else:
@@ -113,8 +113,19 @@ def main(args):
         'electron': 'log_ratio',
         }[particle]
     label_kin = kin_to_label(kin, scheme=label_scheme)
-    
-    X_train = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, input_data['showers'][:])
+
+    if 'showers' in input_data:
+        showers = input_data['showers'][:]
+    else:
+        relevant_layers = [0, 1, 2, 3, 12]
+        layers_to_concatenate = []
+        # Loop through the relevant layer numbers and append the corresponding data
+        for layer in relevant_layers:
+            layer_data = input_data[f'energy_layer_{layer}'][:]
+            layers_to_concatenate.append(layer_data)
+        showers = np.concatenate(layers_to_concatenate, axis=1)
+
+    X_train = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, showers)
     if args.mask is not None:
         if args.mask < 0:
             mask = list(np.unique(energies)/256 * abs(args.mask)) # E/256 * (-mask)
@@ -238,7 +249,7 @@ def main(args):
 def plot_input(args, X_train, output):
     kin, particle = get_kin(args.input_file)
     input_data = h5py.File(f'{args.input_file}', 'r')
-    kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
+    kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     categories, xtrain_list = split_energy(kin, X_train)
     out_file = os.path.join(output, f'input_{particle}_{args.preprocess}.pdf')
     plot_energy_vox(categories, [xtrain_list], label_list=['Input'], nvox='all', logx=False, \

@@ -29,8 +29,8 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
     elif 'dataset3' in input_file_name:
         binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
 
-    X_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['showers'][:])
-    Y_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['incident_energies'][:])
+    X_train = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, input_file['showers'][:])
+    Y_train = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, input_file['incident_energy'][:])
     if mode == 'total':
         hlf = HighLevelFeatures(particle, filename=binning_xml)
         hlf.CalculateFeatures(X_train)
@@ -52,11 +52,11 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
     if normalise:
         vector /= Y_train
     kin = get_kin(input_file_name, label=True) # added in DS2
-    kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
+    kin = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, kin)
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
-        categories, vector_list = split_energy(input_file['incident_energies'], vector)
+        categories, vector_list = split_energy(input_file['incident_energy'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
         categories, vector_list = split_energy(kin, vector)
     else:
@@ -70,7 +70,7 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
 def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False, normalise_by=None, istiming=False):
     kin, particle = get_kin(input_file_name)
     input_file = h5py.File(f'{input_file_name}', 'r')
-    kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
+    kin = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, kin)
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
     gan_statistics = -1 # -1 means the same statistics as input training, alternatively can use 10000 for every energy point, but this is found to be unstable in terms of chi2 values
@@ -138,11 +138,11 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
 
     if 'dataset2' in input_file_name:
         kin = get_kin(input_file_name, label=True) # added in DS2
-        kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
+        kin = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, kin)
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
-        categories, vector_list = split_energy(input_file['incident_energies'], vector)
+        categories, vector_list = split_energy(input_file['incident_energy'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
         categories, vector_list = split_energy(kin, vector)
     else:
@@ -410,7 +410,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         categories, E_tru_list, E_tru_vox, E_incident = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
         #kin, particle = get_kin(args.input_file) # for DS1
         kin = get_kin(args.input_file, label=True) # added in DS2
-        kin = filter_energy(particle, h5py.File(f'{args.input_file}', 'r')['incident_energies'][:], args.split_energy_position, kin)
+        kin = filter_energy(particle, h5py.File(f'{args.input_file}', 'r')['incident_energy'][:], args.split_energy_position, kin)
         categories, kin_list = split_energy(kin, kin)
         xlabel = f"Energy of voxel [MeV]"
         plot_energy_vox(categories, [E_tru_list, E_gan_list], label_list=['Geant4', 'GAN'], nvox='all', \
@@ -453,7 +453,7 @@ def gen_h5(energies, showers, output):
     dataset_file = h5py.File(output, 'w')
     energies = np.array(energies)
     showers  = np.array(showers)
-    dataset_file.create_dataset('incident_energies', data=energies.reshape(len(energies), -1), compression='gzip')
+    dataset_file.create_dataset('incident_energy', data=energies.reshape(len(energies), -1), compression='gzip')
     dataset_file.create_dataset('showers', data=showers.reshape(len(showers), -1), compression='gzip')
     print('Save h5 file to', output)
     dataset_file.close()
