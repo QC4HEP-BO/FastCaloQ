@@ -1,0 +1,371 @@
+#Agent jdl file
+Universe        = vanilla
+initialdir      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor
+Executable      = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/wrapper.sh
+GetEnv          = True
+Error           = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).err
+Log             = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).log
+Output          = /afs/cern.ch/work/z/zhangr/FCG/FastCaloChallenge/condor/log/$(ClusterId).$(ProcId).out
+notify_user     = rui.zhang@cern.ch
+notification    = always
+stream_output   = False
+stream_error    = False
+#Requirements = ((Arch == "X86_64") && (regexp("CentOS7",OpSysAndVer)))
+WhenToTransferOutput = ON_EXIT_OR_EVICT
+OnExitRemove         = TRUE
++JobFlavour = "testmatch"
++JobType="training"
+request_GPUs = 1
+request_CPUs = 4
+Request_memory = 8 GB
+Request_disk   = 4 GB
+train_eval = train
+
+###         task=$1         input=$2                         output=model_config
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1-wrong
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 noBN_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNReLU_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishHe_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 SN_GANv2
+#Queue 1
+#                                                                       
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   GANv1_GANv1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswish_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNReLU_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   BNswishHe_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   SN_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5   noBN_GANv2
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 noBN_GANv1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 noBN_BS128
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_BS128
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 noBN_dglam
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_dglam
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_latent01
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo6
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo7
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1-Tlatuni
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 GANv1_GANv1-Tglo
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo8
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo9
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo11
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 GANv1_GANv1-Tlatuni
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_pions_1.hdf5 GANv1_GANv1-Tglo
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M10000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M100
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1000
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn100
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo14-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo15-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo16-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo12-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo17
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Plog10.10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Plog10.10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo19-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo20-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo21-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo22-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Plog10.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Plog10.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Plog10.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Plog10.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Plog10.0.8
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Plog10.0.8
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Plog10.0.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Plog10.0.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Pscale.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Pscale.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Pscale.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Pscale.0.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Pslope.30
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Pslope.30
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo23-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo23-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo24-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo24-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo25-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo25-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo26-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo26-Mn1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-Mn1-Pslope.10
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-Pslope.10
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_12_18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lsplit_at_18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M1-P-Lindex
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sge12le18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M1-P-L-Sge18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sge12le18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sge18
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo101-M-P-L-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo101-M-P-L-Sge12le18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo101-M-P-L-Sge18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo101-M-P-Llog_ratio_full_photon-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo101-M-P-Llog_ratio_full_photon-Sge12le18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo101-M-P-Llog_ratio_full_photon-Sge18
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12le18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-Llog_ratio_full_photon-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-Llog_ratio_full_photon-Sge12le18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-Llog_ratio_full_photon-Sge18
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sle12
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12le18.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-P-L-Sle12.2
+#Queue 1
+#
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge12.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge12le18.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo4-M-P-L-Sge18.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-P-L-Sle12.3
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo4-M-P-L-Sle12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo4-M-P-L-Sle12.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo4-M-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo4-M-P-L-Sle12.3
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo32-M-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo32-M-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo31-M-P-L-Sle12.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU_hpo31-M-P-L-Sle12.3
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.4
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pconcatlayer-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-Pnormlayer-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo101-M-Pnormlayer-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo112-M-Pnormlayer-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNLeakyReLU2_hpo112-M-Pnormlayer-L-Sge18.1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo112-M-Pnormlayer2-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo114-M-Pnormlayer2-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo115-M-Pnormlayer2-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo116-M-Pnormlayer2-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo112-M-Pnormlayer3-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo114-M-Pnormlayer3-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo115-M-Pnormlayer3-L-Sge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo116-M-Pnormlayer3-L-Sge18.1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-Sle12.2
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer3-L-ge12le18.2
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-Sle12.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-ge12le18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-ge18.1
+#Queue 1
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo113-M-Pnormlayer2-L-Sge12
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustActiv_hpo117-M-Pnormlayer2-L-ge18.1
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.1
+#Queue 1
+
+
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.2 # X_train[X_train <= 1e-6] = 1e-6
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.1 # X_train[X_train <= 1e-6] = 1e-6
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele2_hpo117-M-PnormlayerMichele2-L-ge18.3 # X_train[X_train == 0] = 0.0001
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswishCustMichele_hpo117-M-PnormlayerMichele-L-ge18.2 # X_train[X_train == 0] = 0.0001
+#Queue 1
+
+Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNReLUCustActiv_hpo113-M-Pnormlayer2-L-Sle12.1
+Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge18.5
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12.3
+#Queue 1
+#Arguments = $(train_eval) ../input/dataset1/dataset_1_photons_1.hdf5 BNswish_hpo101-M-P-L-Sge12le18.3
+#Queue 1

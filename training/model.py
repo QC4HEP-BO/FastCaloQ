@@ -90,27 +90,27 @@ class WGANGP:
         if self.optimizer == 'adam':
             self.generator_optimizer = tf.optimizers.Adam(learning_rate=self.G_lr, beta_1=self.G_beta1)
             self.discriminator_optimizer = tf.optimizers.Adam(learning_rate=self.D_lr, beta_1=self.D_beta1)
-        elif self.optimizer == 'clr':
-            import tensorflow_addons as tfa
-            steps_per_epoch = tf.cast(self.datasize // self.batchsize, tf.int64)
-            G_clr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=self.G_lr/2, maximal_learning_rate=self.D_lr*5, scale_fn=lambda x: 1/(2.**(x-1)), step_size=int(2E5)*steps_per_epoch)
-            D_clr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=self.D_lr/2, maximal_learning_rate=self.D_lr*5, scale_fn=lambda x: 1/(2.**(x-1)), step_size=int(2E5)*steps_per_epoch)
-            self.generator_optimizer = tf.optimizers.Adam(learning_rate=G_clr)
-            self.discriminator_optimizer = tf.optimizers.Adam(learning_rate=D_clr)
-            step = np.arange(0, self.max_iter * steps_per_epoch)
-            if ('train' in logger):
-                self.plot_clr(G_clr, D_clr, step)
+        #elif self.optimizer == 'clr':
+        #    import tensorflow_addons as tfa
+        #    steps_per_epoch = tf.cast(self.datasize // self.batchsize, tf.int64)
+        #    G_clr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=self.G_lr/2, maximal_learning_rate=self.D_lr*5, scale_fn=lambda x: 1/(2.**(x-1)), step_size=int(2E5)*steps_per_epoch)
+        #    D_clr = tfa.optimizers.CyclicalLearningRate(initial_learning_rate=self.D_lr/2, maximal_learning_rate=self.D_lr*5, scale_fn=lambda x: 1/(2.**(x-1)), step_size=int(2E5)*steps_per_epoch)
+        #    self.generator_optimizer = tf.optimizers.Adam(learning_rate=G_clr)
+        #    self.discriminator_optimizer = tf.optimizers.Adam(learning_rate=D_clr)
+        #    step = np.arange(0, self.max_iter * steps_per_epoch)
+        #    if ('train' in logger):
+        #        self.plot_clr(G_clr, D_clr, step)
 
-        elif self.optimizer == 'radam':
-            import tensorflow_addons as tfa
-            G_radam = tfa.optimizers.RectifiedAdam(lr=self.G_lr, beta_1=self.G_beta1, total_steps=10000, warmup_proportion=0.1, min_lr=self.G_lr/10)
-            D_radam = tfa.optimizers.RectifiedAdam(lr=self.D_lr, beta_1=self.D_beta1, total_steps=10000, warmup_proportion=0.1, min_lr=self.D_lr/10)
-            self.generator_optimizer = tfa.optimizers.Lookahead(G_radam, sync_period=6, slow_step_size=0.5)
-            self.discriminator_optimizer = tfa.optimizers.Lookahead(D_radam, sync_period=6, slow_step_size=0.5)
-        elif self.optimizer == 'adamW':
-            import tensorflow_addons as tfa
-            self.generator_optimizer = tfa.optimizers.AdamW(weight_decay=1E-4, lr=self.G_lr, beta_1=self.G_beta1)
-            self.discriminator_optimizer = tfa.optimizers.AdamW(weight_decay=1E-4, lr=self.D_lr, beta_1=self.D_beta1)
+        #elif self.optimizer == 'radam':
+        #    import tensorflow_addons as tfa
+        #    G_radam = tfa.optimizers.RectifiedAdam(lr=self.G_lr, beta_1=self.G_beta1, total_steps=10000, warmup_proportion=0.1, min_lr=self.G_lr/10)
+        #    D_radam = tfa.optimizers.RectifiedAdam(lr=self.D_lr, beta_1=self.D_beta1, total_steps=10000, warmup_proportion=0.1, min_lr=self.D_lr/10)
+        #    self.generator_optimizer = tfa.optimizers.Lookahead(G_radam, sync_period=6, slow_step_size=0.5)
+        #    self.discriminator_optimizer = tfa.optimizers.Lookahead(D_radam, sync_period=6, slow_step_size=0.5)
+        #elif self.optimizer == 'adamW':
+        #    import tensorflow_addons as tfa
+        #    self.generator_optimizer = tfa.optimizers.AdamW(weight_decay=1E-4, lr=self.G_lr, beta_1=self.G_beta1)
+        #    self.discriminator_optimizer = tfa.optimizers.AdamW(weight_decay=1E-4, lr=self.D_lr, beta_1=self.D_beta1)
         else:
             print(self.optimizer, 'not implemented')
             raise NotImplementedError
@@ -345,7 +345,7 @@ class WGANGP:
 
         model = tf.keras.Sequential()
         if self.dmodel == 'spectral_norm':
-            from tensorflow_addons.layers import SpectralNormalization
+            from tensorflow.keras.layers import SpectralNormalization
             model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node, input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros"))
             model.add(layers.ReLU())
             model.add(SpectralNormalization(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,

@@ -2,16 +2,15 @@ import numpy as np
 import re
 from pdb import set_trace
 
-def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=None):
+def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relevant_layers=None, all_data=None):
     if not reverse: # train
         if name is None:
             X_train /= kin
         elif name in ['concatlayer', 'normlayer1']:
             X_train /= kin
-            bin_edges = xml.GetBinEdges()
             E_layers = []
-            for layer in xml.GetRelevantLayers():
-                E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].mean(axis=-1).reshape(-1, 1))
+            for layer in relevant_layers:
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
             E_layers = np.concatenate(E_layers, axis=1)
             X_train = np.concatenate([X_train, E_layers], axis=1)
             return X_train
@@ -20,12 +19,14 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             import tensorflow as tf
             X_train[X_train == 0] = 0.0001
             #X_train[X_train <= 1e-6] = 1e-6
-            bin_edges = xml.GetBinEdges()
             E_layers = []
-            for layer in xml.GetRelevantLayers():
-                E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].sum(axis=-1).reshape(-1, 1))
+            begin = 0
+            for layer in relevant_layers:
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
                 # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
-                X_train[:, bin_edges[layer]:bin_edges[layer+1]] = tf.math.divide_no_nan(X_train[:, bin_edges[layer]:bin_edges[layer+1]], E_layers[-1])
+                length = all_data[f'energy_layer_{layer}'].shape[1]
+                X_train[:, begin:begin+length] = tf.math.divide_no_nan(X_train[:, begin:begin+length], E_layers[-1])
+                begin += length
             E_layers = np.concatenate(E_layers, axis=1)
             E_shower = E_layers.sum(axis=-1).reshape(-1, 1)
 
@@ -42,10 +43,14 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             #X_train[X_train <= 1e-6] = 1e-6
             bin_edges = xml.GetBinEdges()
             E_layers = []
-            for layer in xml.GetRelevantLayers():
-                E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].sum(axis=-1).reshape(-1, 1))
+            begin = 0
+            for layer in relevant_layers:
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
                 # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
-                X_train[:, bin_edges[layer]:bin_edges[layer+1]] = tf.math.divide_no_nan(X_train[:, bin_edges[layer]:bin_edges[layer+1]], E_layers[-1])
+                length = all_data[f'energy_layer_{layer}'].shape[1]
+                X_train[:, begin:begin+length] = tf.math.divide_no_nan(X_train[:, begin:begin+length], E_layers[-1])
+                begin += length
+
             E_layers = np.concatenate(E_layers, axis=1)
             E_shower = E_layers.sum(axis=-1).reshape(-1, 1)
 
@@ -62,13 +67,16 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             X_train[X_train == 0] = 0.0001
             bin_edges = xml.GetBinEdges()
             E_layers = []
-            for layer in xml.GetRelevantLayers():
-                E_layers.append(X_train[:, bin_edges[layer]:bin_edges[layer+1]].sum(axis=-1).reshape(-1, 1))
+            begin = 0
+            for layer in relevant_layers:
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
                 # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
-                X_train[:, bin_edges[layer]:bin_edges[layer+1]] = tf.math.divide_no_nan(X_train[:, bin_edges[layer]:bin_edges[layer+1]], E_layers[-1])
+                length = all_data[f'energy_layer_{layer}'].shape[1]
+                X_train[:, begin:begin+length] = tf.math.divide_no_nan(X_train[:, begin:begin+length], E_layers[-1])
+                begin += length
 
             # further normalise by number of layers such that we can perform softmax on all voxels (not in individual layers)
-            X_train /= len(xml.GetRelevantLayers())
+            X_train /= len(relevant_layers)
 
             E_layers = np.concatenate(E_layers, axis=1)
             E_shower = E_layers.sum(axis=-1).reshape(-1, 1)
@@ -143,7 +151,7 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
         if name is None:
             X_train *= kin
         elif name in ['concatlayer', 'normlayer1']:
-            X_train = X_train[:, :X_train.shape[1] - len(xml.GetRelevantLayers())] # drop the last xml.GetRelevantLayers() columns
+            X_train = X_train[:, :X_train.shape[1] - len(relevant_layers)] # drop the last relevant_layers columns
             X_train *= kin
             return X_train
         elif name in ['normlayer2', 'normlayerMichele2']:
@@ -151,12 +159,12 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             E_shower = tf.reshape(X_train[:, -1], (-1, 1))
             E_shower *= kin
 
-            E_layers = X_train[:, -1-len(xml.GetRelevantLayers()) : -1].numpy()
+            E_layers = X_train[:, -1-len(relevant_layers) : -1].numpy()
             E_layers *= E_shower
 
-            X_train = X_train[:, :-1-len(xml.GetRelevantLayers())].numpy() # drap the last xml.GetRelevantLayers() + 1 columns
+            X_train = X_train[:, :-1-len(relevant_layers)].numpy() # drap the last relevant_layers + 1 columns
             bin_edges = xml.GetBinEdges()
-            for num, layer in enumerate(xml.GetRelevantLayers()):
+            for num, layer in enumerate(relevant_layers):
                 X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
 
             return tf.convert_to_tensor(X_train)
@@ -167,28 +175,28 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, xml=N
             E_shower *= kin
 
             # E_layer = predicted layer * E_shower
-            E_layers = X_train[:, -1-len(xml.GetRelevantLayers()) : -1].numpy()
+            E_layers = X_train[:, -1-len(relevant_layers) : -1].numpy()
             E_layers *= E_shower
 
             # E_voxel = predicted voxel * E_layer * numberOfLayer
-            X_train = X_train[:, :-1-len(xml.GetRelevantLayers())].numpy() # drap the last xml.GetRelevantLayers() + 1 columns
+            X_train = X_train[:, :-1-len(relevant_layers)].numpy() # drap the last relevant_layers + 1 columns
             bin_edges = xml.GetBinEdges()
-            for num, layer in enumerate(xml.GetRelevantLayers()):
+            for num, layer in enumerate(relevant_layers):
                 X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
-            X_train *= len(xml.GetRelevantLayers())
+            X_train *= len(relevant_layers)
 
             return tf.convert_to_tensor(X_train)
         elif name in ['normlayerMichele']: # normlayerMichele vs normlayerMichele2: position of total energy is different. [voxE, layerE, showerE] vs [voxE, showerE, layerE]
             import tensorflow as tf
-            E_shower = tf.reshape(X_train[:, -1-len(xml.GetRelevantLayers())], (-1, 1))
+            E_shower = tf.reshape(X_train[:, -1-len(relevant_layers)], (-1, 1))
             E_shower *= kin
 
-            E_layers = X_train[:, -len(xml.GetRelevantLayers()) : ].numpy()
+            E_layers = X_train[:, -len(relevant_layers) : ].numpy()
             E_layers *= E_shower
 
-            X_train = X_train[:, :-1-len(xml.GetRelevantLayers())].numpy() # drap the last xml.GetRelevantLayers() + 1 columns
+            X_train = X_train[:, :-1-len(relevant_layers)].numpy() # drap the last relevant_layers + 1 columns
             bin_edges = xml.GetBinEdges()
-            for num, layer in enumerate(xml.GetRelevantLayers()):
+            for num, layer in enumerate(relevant_layers):
                 X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
 
             return tf.convert_to_tensor(X_train)

@@ -126,6 +126,10 @@ def main(args):
         showers = np.concatenate(layers_to_concatenate, axis=1)
 
     X_train = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, showers)
+    all_data = {}
+    for key in input_data.keys():
+        if key.startswith('energy_layer_'):
+            all_data[key] = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, input_data[key][:])
     if args.mask is not None:
         if args.mask < 0:
             mask = list(np.unique(energies)/256 * abs(args.mask)) # E/256 * (-mask)
@@ -141,10 +145,10 @@ def main(args):
             ): # log10.x, scale.x, slope
             X_train, scale = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file)
         elif args.preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
-            from XMLHandler import XMLHandler
-            xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
+            #from XMLHandler import XMLHandler
+            #xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
             shower_shape = X_train.shape
-            X_train = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file, xml=xml)
+            X_train = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file, relevant_layers=relevant_layers, all_data=all_data)
             scale = None
             print('\033[92m[INFO] Training size enlarged with layer info\033[0m', shower_shape, '->', X_train.shape)
     else:
@@ -232,7 +236,8 @@ def main(args):
     }
 
     if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
-        config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
+        config_string = f'normlayer__{len(relevant_layers)}__'
+        config_string += ':'.join([str(input_data[f"energy_layer_{layer}"].shape[1]) for layer in relevant_layers])
         if args.preprocess in ['normlayer3']:
             config_string += '__mergelayer'
     else:
