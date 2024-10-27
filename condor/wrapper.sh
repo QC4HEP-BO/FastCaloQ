@@ -6,9 +6,10 @@ source /eos/user/z/zhangr/Miniforge3/setup.sh
 echo $@
 
 task=$1
-input=$2
-output=$3
-loading=$4
+relevant_layer=$2
+input=$3
+output=$4
+loading=$5
 
 model=`echo $output | cut -d '_' -f 1`
 config_mask=`echo $output | cut -d '_' -f 2-1000`
@@ -18,6 +19,7 @@ mask=`echo $config_mask | cut -d '-' -f 2 | cut -d 'M' -f 2`
 prep=`echo $config_mask | cut -d '-' -f 3 | cut -d 'P' -f 2`
 label_scheme=`echo $config_mask | cut -d '-' -f 4 | cut -d 'L' -f 2`
 split_energy=`echo $config_mask | cut -d '-' -f 5 | cut -d 'S' -f 2`
+relevant_layer=$(echo "${relevant_layer//_/ }")
 
 echo input=$input
 echo output=$output
@@ -26,6 +28,7 @@ echo prep=$prep
 echo loading=$loading
 echo label_scheme=$label_scheme
 echo split_energy=$split_energy
+echo relevant_layer=$relevant_layer
 
 if [[ $mask == ?(n)+([0-9]) ]]; then
     version='v2'
@@ -64,9 +67,9 @@ fi
 
 if [[ ${task} == *'train'* ]]; then
     #command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition}"
-    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --max_iter 1000000"
+    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --relevant_layer ${relevant_layer} --max_iter 1000000"
 else
-    command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition}"
+    command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --relevant_layer ${relevant_layer} --checkpoint ${evaluate_addition}"
 fi
 echo $command
 eval $command

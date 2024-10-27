@@ -117,11 +117,10 @@ def main(args):
     if 'showers' in input_data:
         showers = input_data['showers'][:]
     else:
-        relevant_layers = [0, 1, 2, 3, 12]
         layers_to_concatenate = []
         # Loop through the relevant layer numbers and append the corresponding data
-        for layer in relevant_layers:
-            layer_data = input_data[f'energy_layer_{layer}'][:]
+        for layer in args.relevant_layers:
+            layer_data = input_data[f'energy_layer_{layer}'][:] * input_data[f'incident_energy'][:][:, np.newaxis]
             layers_to_concatenate.append(layer_data)
         showers = np.concatenate(layers_to_concatenate, axis=1)
 
@@ -129,7 +128,7 @@ def main(args):
     all_data = {}
     for key in input_data.keys():
         if key.startswith('energy_layer_'):
-            all_data[key] = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, input_data[key][:])
+            all_data[key] = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, input_data[key][:] * input_data[f'incident_energy'][:][:, np.newaxis])
     if args.mask is not None:
         if args.mask < 0:
             mask = list(np.unique(energies)/256 * abs(args.mask)) # E/256 * (-mask)
@@ -148,7 +147,7 @@ def main(args):
             #from XMLHandler import XMLHandler
             #xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file)}/binning_dataset_1_{particle}s.xml')
             shower_shape = X_train.shape
-            X_train = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file, relevant_layers=relevant_layers, all_data=all_data)
+            X_train = preprocessing(X_train, kin, name=args.preprocess, input_file=input_file, relevant_layers=args.relevant_layers, all_data=all_data)
             scale = None
             print('\033[92m[INFO] Training size enlarged with layer info\033[0m', shower_shape, '->', X_train.shape)
     else:
@@ -236,8 +235,8 @@ def main(args):
     }
 
     if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
-        config_string = f'normlayer__{len(relevant_layers)}__'
-        config_string += ':'.join([str(input_data[f"energy_layer_{layer}"].shape[1]) for layer in relevant_layers])
+        config_string = f'normlayer__{len(args.relevant_layers)}__'
+        config_string += ':'.join([str(input_data[f"energy_layer_{layer}"].shape[1]) for layer in args.relevant_layers])
         if args.preprocess in ['normlayer3']:
             config_string += '__mergelayer'
     else:
@@ -266,6 +265,7 @@ if __name__ == '__main__':
     """Get arguments from command line."""
     parser = ArgumentParser(description="\033[92mConfig for training.\033[0m")
     parser.add_argument('-i', '--input_file', type=str, required=False, default='', help='Training h5 file name (default: %(default)s)')
+    parser.add_argument('--relevant_layers', type=int, required=True, nargs='+', help='Relevant layers (Photons [0, 1, 2, 3, 12])')
     parser.add_argument('-o', '--output_path', type=str, required=True, default='../output/dataset1/v1', help='Training h5 file path (default: %(default)s)')
     parser.add_argument('-c', '--config', type=str, required=False, default=None, help='External config file (default: %(default)s)')
     parser.add_argument('-m', '--model', type=str, required=False, default=None, help='Model name (default: %(default)s)')

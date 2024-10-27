@@ -3,33 +3,36 @@
     Class that handles the specific binning geometry based on the provided file
     and computes all relevant high-level features
 """
+from pdb import set_trace 
 import os
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm as LN
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-
+import h5py
+from observables import calc_shower_mean, calc_shower_std
 
 from XMLHandler import XMLHandler
 
 class HighLevelFeatures:
     """ Computes all high-level features based on the specific geometry stored in the binning file
     """
-    def __init__(self, particle, filename='binning.xml'):
+    def __init__(self, particle, filename, relevant_layers):
         """ particle (str): particle to be considered
-            filename (str): path/to/binning.xml of the specific detector geometry.
+            filename (str): path/to/.h5 of the specific detector geometry.
             particle is redundant, as it is also part of the binning file, however, it serves as a
             crosscheck to ensure the correct binning is used.
         """
-        xml = XMLHandler(particle, filename=filename)
-        self.bin_edges = xml.GetBinEdges()
-        self.eta_all_layers, self.phi_all_layers = xml.GetEtaPhiAllLayers()
-        self.relevantLayers = xml.GetRelevantLayers()
-        self.layersBinnedInAlpha = xml.GetLayersWithBinningInAlpha()
-        self.r_edges = [redge for redge in xml.r_edges if len(redge) > 1]
-        self.num_alpha = [len(xml.alphaListPerLayer[idx][0]) for idx, redge in \
-                          enumerate(xml.r_edges) if len(redge) > 1]
+        #xml = XMLHandler(particle, filename=filename)
+        #self.bin_edges = xml.GetBinEdges()
+        #self.eta_all_layers, self.phi_all_layers = xml.GetEtaPhiAllLayers()
+        #self.relevantLayers = xml.GetRelevantLayers()
+        #self.layersBinnedInAlpha = xml.GetLayersWithBinningInAlpha()
+        #self.r_edges = [redge for redge in xml.r_edges if len(redge) > 1]
+        #self.num_alpha = [len(xml.alphaListPerLayer[idx][0]) for idx, redge in \
+        #                  enumerate(xml.r_edges) if len(redge) > 1]
+
         self.E_tot = None
         self.E_layers = {}
         self.EC_etas = {}
@@ -38,9 +41,20 @@ class HighLevelFeatures:
         self.width_phis = {}
         self.particle = particle
 
-        self.num_voxel = []
-        for idx, r_values in enumerate(self.r_edges):
-            self.num_voxel.append((len(r_values)-1)*self.num_alpha[idx])
+        self.input_data = h5py.File(f'{filename}', 'r')
+        self.all_layers = [int(key.split("_")[-1]) for key in self.input_data.keys() if key.startswith("energy_layer_")].sort()
+        #self.bin_edges = []
+        self.relevantLayers = relevant_layers
+        self._get_layer_boundaries()
+
+    def _get_layer_boundaries(self):
+        for layer in self.relevantLayers:
+            self.E_layers[layer] = self.input_data[f'energy_layer_{layer}'][:]
+
+        self.layer_boundaries = [0]
+        for _, layer in self.E_layers.items():
+            self.layer_boundaries.append(layer.shape[1] + self.layer_boundaries[-1])
+        return self.layer_boundaries
 
     def _calculate_EC(self, eta, phi, energy):
         eta_EC = (eta * energy).sum(axis=-1)/(energy.sum(axis=-1)+1e-16)
@@ -66,18 +80,37 @@ class HighLevelFeatures:
         """ Computes all high-level features for the given data """
         self.E_tot = data.sum(axis=-1)
 
-        for l in self.relevantLayers:
-            E_layer = data[:, self.bin_edges[l]:self.bin_edges[l+1]].sum(axis=-1)
-            self.E_layers[l] = E_layer
 
-        for l in self.relevantLayers:
+        R_binstarts = []
+        coordinates = [[],[]]
+        
+        for layer_index in self.relevantLayers:
+            # Read the binstart and binsize values for alpha and R and compute the corresponding midpoints
+            alpha_binstart = self.input_data[f"binstart_alpha_layer_{layer_index}"][:]
+            alpha_binsize = self.input_data[f"binsize_alpha_layer_{layer_index}"][:]
+            alpha_midpoint = alpha_binstart + alpha_binsize / 2
 
-            if l in self.layersBinnedInAlpha:
-                self.EC_etas[l], self.EC_phis[l], self.width_etas[l], \
-                    self.width_phis[l] = self.GetECandWidths(
-                        self.eta_all_layers[l],
-                        self.phi_all_layers[l],
-                        data[:, self.bin_edges[l]:self.bin_edges[l+1]])
+            R_binstart = self.input_data[f"binstart_radius_layer_{layer_index}"][:]
+            R_binsize = self.input_data[f"binsize_radius_layer_{layer_index}"][:]
+            R_midpoint = R_binstart + R_binsize / 2
+            R_binstarts.append(R_binstart)
+            
+            eta = R_midpoint * np.cos(alpha_midpoint)
+            phi = R_midpoint * np.sin(alpha_midpoint)
+            
+            coordinates[0].append(eta)
+            coordinates[1].append(phi)
+            
+        coordinates[0] = np.concatenate(coordinates[0])
+        coordinates[1] = np.concatenate(coordinates[1])
+        coordinates = np.stack(coordinates)
+
+
+        
+        for l, layer in enumerate(self.relevantLayers):
+            self.EC_etas[layer], self.EC_phis[layer] = calc_shower_mean(layer_energy=self.E_layers[layer], layer_boundaries=self.layer_boundaries, layer=l, coordinates=coordinates, direction='both')
+            self.width_etas[layer], self.width_phis[layer] = calc_shower_std(layer_energy=self.E_layers[layer], layer_boundaries=self.layer_boundaries, layer=l, coordinates=coordinates, direction='both')
+
 
     def _DrawSingleLayer(self, data, layer_nr, filename, title=None, fig=None, subplot=(1, 1, 1),
                          vmax=None, colbar='alone'):
@@ -142,7 +175,6 @@ class HighLevelFeatures:
         fig = plt.figure(figsize=figsize, dpi=200)
         # to smoothen the angular bins (must be multiple of self.num_alpha):
         num_splits = 400
-        layer_boundaries = np.unique(self.bin_edges)
         max_r = 0
         for radii in self.r_edges:
             if radii[-1] > max_r:
@@ -154,7 +186,7 @@ class HighLevelFeatures:
                 radii[1:] = np.log(radii[1:])
             theta, rad = np.meshgrid(2.*np.pi*np.arange(num_splits+1)/ num_splits, radii)
             pts_per_angular_bin = int(num_splits / self.num_alpha[idx])
-            data_reshaped = data[layer_boundaries[idx]:layer_boundaries[idx+1]].reshape(
+            data_reshaped = data[self.layer_boundaries[idx]:self.layer_boundaries[idx+1]].reshape(
                 int(self.num_alpha[idx]), -1)
             data_repeated = np.repeat(data_reshaped, (pts_per_angular_bin), axis=0)
             if self.particle == 'electron':

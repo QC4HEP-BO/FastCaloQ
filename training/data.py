@@ -17,12 +17,12 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relev
         elif name in ['normlayer2', 'normlayerMichele2']:
             # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
             import tensorflow as tf
-            X_train[X_train == 0] = 0.0001
+            #X_train[X_train == 0] = 0.0001
             #X_train[X_train <= 1e-6] = 1e-6
             E_layers = []
             begin = 0
             for layer in relevant_layers:
-                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].sum(axis=-1).reshape(-1, 1))
                 # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
                 length = all_data[f'energy_layer_{layer}'].shape[1]
                 X_train[:, begin:begin+length] = tf.math.divide_no_nan(X_train[:, begin:begin+length], E_layers[-1])
@@ -41,11 +41,11 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relev
             import tensorflow as tf
             X_train[X_train == 0] = 0.0001
             #X_train[X_train <= 1e-6] = 1e-6
-            bin_edges = xml.GetBinEdges()
+            #bin_edges = xml.GetBinEdges()
             E_layers = []
             begin = 0
             for layer in relevant_layers:
-                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].sum(axis=-1).reshape(-1, 1))
                 # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
                 length = all_data[f'energy_layer_{layer}'].shape[1]
                 X_train[:, begin:begin+length] = tf.math.divide_no_nan(X_train[:, begin:begin+length], E_layers[-1])
@@ -65,11 +65,11 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relev
             # https://docs.google.com/presentation/d/e/2PACX-1vTqNjAM0DMe7gM7E6zBIeT4JaIP31S_5ELiGPeOGQ0ORRH0zQHygyY3cIYGkBv0Xwjd3B1cs3oXfjEI/pub?start=false&loop=false&delayms=3000&slide=id.g24b23d90052_0_366
             import tensorflow as tf
             X_train[X_train == 0] = 0.0001
-            bin_edges = xml.GetBinEdges()
+            #bin_edges = xml.GetBinEdges()
             E_layers = []
             begin = 0
             for layer in relevant_layers:
-                E_layers.append(all_data[f'energy_layer_{layer}'][:].mean(axis=-1).reshape(-1, 1))
+                E_layers.append(all_data[f'energy_layer_{layer}'][:].sum(axis=-1).reshape(-1, 1))
                 # normalise voxel energy by layer energy; afterwards, by definition X_train[:, bin_edges[layer]:bin_edges[layer+1].sum(axis=-1) = 1
                 length = all_data[f'energy_layer_{layer}'].shape[1]
                 X_train[:, begin:begin+length] = tf.math.divide_no_nan(X_train[:, begin:begin+length], E_layers[-1])
@@ -163,9 +163,10 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relev
             E_layers *= E_shower
 
             X_train = X_train[:, :-1-len(relevant_layers)].numpy() # drap the last relevant_layers + 1 columns
-            bin_edges = xml.GetBinEdges()
+            #bin_edges = xml.GetBinEdges()
+            layer_boundaries = get_layer_boundaries(all_data, relevant_layers)
             for num, layer in enumerate(relevant_layers):
-                X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
+                X_train[:, layer_boundaries[num]:layer_boundaries[num+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
 
             return tf.convert_to_tensor(X_train)
         elif name in ['normlayer3']:
@@ -180,9 +181,10 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relev
 
             # E_voxel = predicted voxel * E_layer * numberOfLayer
             X_train = X_train[:, :-1-len(relevant_layers)].numpy() # drap the last relevant_layers + 1 columns
-            bin_edges = xml.GetBinEdges()
+            #bin_edges = xml.GetBinEdges()
+            layer_boundaries = get_layer_boundaries(all_data, relevant_layers)
             for num, layer in enumerate(relevant_layers):
-                X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
+                X_train[:, layer_boundaries[num]:layer_boundaries[num+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
             X_train *= len(relevant_layers)
 
             return tf.convert_to_tensor(X_train)
@@ -195,9 +197,10 @@ def preprocessing(X_train, kin, name=None, reverse=False, input_file=None, relev
             E_layers *= E_shower
 
             X_train = X_train[:, :-1-len(relevant_layers)].numpy() # drap the last relevant_layers + 1 columns
-            bin_edges = xml.GetBinEdges()
+            #bin_edges = xml.GetBinEdges()
+            layer_boundaries = get_layer_boundaries(all_data, relevant_layers)
             for num, layer in enumerate(relevant_layers):
-                X_train[:, bin_edges[layer]:bin_edges[layer+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
+                X_train[:, layer_boundaries[num]:layer_boundaries[num+1]] *= (E_layers[:, num].numpy().reshape(-1, 1))
 
             return tf.convert_to_tensor(X_train)
         elif name == 'neglog10plus1':
@@ -254,3 +257,13 @@ def filter_energy(particle, incident_energies, split_energy_position, X_train):
 
     X_train = X_train[mask.flatten()]
     return X_train
+
+def get_layer_boundaries(input_data, relevantLayers):
+    E_layers = {}
+    for layer in relevantLayers:
+        E_layers[layer] = input_data[f'energy_layer_{layer}'][:]
+
+    layer_boundaries = [0]
+    for _, layer in E_layers.items():
+        layer_boundaries.append(layer.shape[1] + layer_boundaries[-1])
+    return np.array(layer_boundaries)

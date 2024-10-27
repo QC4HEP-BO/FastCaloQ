@@ -20,25 +20,28 @@ from pdb import set_trace
 def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=False):
     # creating instance of HighLevelFeatures class to handle geometry based on binning file
     particle = input_file_name.split('/')[-1].split('_')[-2][:-1]
-    input_file = h5py.File(f'{input_file_name}', 'r')
+    input_data = h5py.File(f'{input_file_name}', 'r')
 
-    if 'dataset1' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml'
-    elif 'dataset2' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_2.xml'
-    elif 'dataset3' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
+    if 'showers' in input_data:
+        showers = input_data['showers'][:]
+    else:
+        layers_to_concatenate = []
+        # Loop through the relevant layer numbers and append the corresponding data
+        for layer in args.relevant_layers:
+            layer_data = input_data[f'energy_layer_{layer}'][:] * input_data[f'incident_energy'][:][:, np.newaxis]
+            layers_to_concatenate.append(layer_data)
+        showers = np.concatenate(layers_to_concatenate, axis=1)
 
-    X_train = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, input_file['showers'][:])
-    Y_train = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, input_file['incident_energy'][:])
+    X_train = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, showers)
+    Y_train = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, input_data['incident_energy'][:])
     if mode == 'total':
-        hlf = HighLevelFeatures(particle, filename=binning_xml)
+        hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
         hlf.CalculateFeatures(X_train)
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
         E_vox = X_train
     elif mode == 'layer':
-        hlf = HighLevelFeatures(particle, filename=binning_xml)
+        hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
         hlf.CalculateFeatures(X_train)
         E_lay = hlf.GetElayers()
 
@@ -52,11 +55,11 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
     if normalise:
         vector /= Y_train
     kin = get_kin(input_file_name, label=True) # added in DS2
-    kin = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, kin)
+    kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
-        categories, vector_list = split_energy(input_file['incident_energy'], vector)
+        categories, vector_list = split_energy(input_data['incident_energy'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
         categories, vector_list = split_energy(kin, vector)
     else:
@@ -69,8 +72,8 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
 
 def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False, normalise_by=None, istiming=False):
     kin, particle = get_kin(input_file_name)
-    input_file = h5py.File(f'{input_file_name}', 'r')
-    kin = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, kin)
+    input_data = h5py.File(f'{input_file_name}', 'r')
+    kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
     gan_statistics = -1 # -1 means the same statistics as input training, alternatively can use 10000 for every energy point, but this is found to be unstable in terms of chi2 values
@@ -81,9 +84,9 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
 
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
     if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
-        from XMLHandler import XMLHandler
-        xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
-        config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
+        layer_boundaries = get_layer_boundaries(input_data, args.relevant_layers)
+        bin_number = layer_boundaries[1:] - layer_boundaries[:-1]
+        config_string = f'normlayer__{len(args.relevant_layers)}__{":".join([ str(x) for x in bin_number if x > 0 ])}'
         if args.preprocess in ['normlayer3']:
             config_string += '__mergelayer'
     else:
@@ -100,29 +103,20 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             scale = os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', f'scale_{preprocess}.json')
             E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=scale)
         elif preprocess in ['concatlayer', 'normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
-            from XMLHandler import XMLHandler
-            xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
-            E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=None, xml=xml)
+            E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=None, relevant_layers=args.relevant_layers, all_data=input_data)
     else:
         E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True)
 
-    if 'dataset1' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml'
-    elif 'dataset2' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_2.xml'
-    elif 'dataset3' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
-
     if mode == 'total':
-        hlf = HighLevelFeatures(particle, filename=binning_xml)
+        hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
         hlf.CalculateFeatures(np.array(E_vox))
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
         pass
-        #input_file = h5py.File(f'{input_file_name}', 'r')
-        #E_vox = input_file['showers'][:]
+        #input_data= h5py.File(f'{input_file_name}', 'r')
+        #E_vox = input_data['showers'][:]
     elif mode == 'layer':
-        hlf = HighLevelFeatures(particle, filename=binning_xml)
+        hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
         hlf.CalculateFeatures(np.array(E_vox))
         E_lay = hlf.GetElayers()
 
@@ -138,12 +132,14 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
 
     if 'dataset2' in input_file_name:
         kin = get_kin(input_file_name, label=True) # added in DS2
-        kin = filter_energy(particle, input_file['incident_energy'][:], args.split_energy_position, kin)
+        kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
-        categories, vector_list = split_energy(input_file['incident_energy'], vector)
+        vector = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, vector)
+        categories, vector_list = split_energy(input_data['incident_energy'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
+        vector = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, vector)
         categories, vector_list = split_energy(kin, vector)
     else:
         raise NotImplementedError("This feature is not implemented yet.")
@@ -305,7 +301,7 @@ def plot_model_i(args, model_i):
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
     suffix = '_load' if args.loading else ''
     df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
-    plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{model_i}.png')
+    plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{model_i}.pdf')
     if os.path.exists(df_name) and os.path.exists(plot_name):
         df = pd.read_csv(df_name)
         if not args.debug and model_i in df['ckpt'].values:
@@ -348,7 +344,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     chi_name = os.path.join(best_folder, 'chi2.pdf')
     if not (os.path.exists(chi_name) and cache):
         os.makedirs(best_folder, exist_ok=True)
-        best_x = int(df[df[f'All{alt}'] == df[f'All{alt}'].min()]['ckpt'] * 1000)
+        best_x = int(df[df[f'All{alt}'] == df[f'All{alt}'].min()]['ckpt'].iloc[0] * 1000)
         best_y = float(df[f'All{alt}'].min())
         x = df['ckpt'] * 1000
         y = df[f'All{alt}']
@@ -363,10 +359,10 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         for index, energy in enumerate(categories):
             ax = axes[index]
             ax.scatter(x, chi2_list[index], s=markersize, facecolor='none', edgecolors="k", alpha=0.9)
-            best_x_i = int(df[df[f'{energy} MeV{alt}'] == df[f'{energy} MeV{alt}'].min()]['ckpt'] * 1000)
+            best_x_i = int(df[df[f'{energy} MeV{alt}'] == df[f'{energy} MeV{alt}'].min()]['ckpt'].iloc[0] * 1000)
             best_y_i = df[f'{energy} MeV{alt}'].min()
             try:
-                best_y_j = float(df[df['ckpt']==int(best_x/1000)][f'{energy} MeV{alt}'])
+                best_y_j = float(df[df['ckpt']==int(best_x/1000)][f'{energy} MeV{alt}'].iloc[0])
             except:
                 set_trace()
             ax.scatter(best_x_i, best_y_i, s=markersize*4, c="orange", label="Local min.")
@@ -397,16 +393,16 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     if not (os.path.exists(csv_name) and cache):
         best_df.to_csv(csv_name, index=False)
 
-        models = glob.glob(os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'checkpoints', f'model-{int(best_df["ckpt"])}*'))
+        models = glob.glob(os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'checkpoints', f'model-{int(best_df["ckpt"].iloc[0])}*'))
         for model in models:
             os.system(f'cp {model} {best_folder}')  
-        plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{int(best_df["ckpt"])}.pdf')
-        os.system(f'cp {plot_name} {best_folder}')  
+        plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{int(best_df["ckpt"].iloc[0])}.*')
+        os.system(f'cp {plot_name} {best_folder}')
 
-    vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"])}_all.pdf')
+    vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"].iloc[0])}_all.pdf')
     if not (os.path.exists(vox_name) and mask_cache):
         # Plot 'masking' distribution; 'masking' means to remove voxel energies below a threshold of 1keV or 1MeV
-        categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, mode='voxel', suffix=suffix, return_E_vox=True, istiming=args.istiming)
+        categories, E_gan_list, E_gan_vox = get_E_gan(model_i=int(best_df["ckpt"].iloc[0]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, mode='voxel', suffix=suffix, return_E_vox=True, istiming=args.istiming)
         categories, E_tru_list, E_tru_vox, E_incident = get_E_truth(args.input_file, mode='voxel', return_E_vox=True)
         #kin, particle = get_kin(args.input_file) # for DS1
         kin = get_kin(args.input_file, label=True) # added in DS2
@@ -426,7 +422,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         layer_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected', 'layer')
         #if not os.path.exists(layer_folder) or len(os.listdir(layer_folder)) == 0:
         #    plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
-        plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
+        plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"].iloc[0]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
 
         if args.save_h5:
             output_h5 = os.path.join(best_folder, 'h5', 'gan.h5')
@@ -439,9 +435,9 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         if args.convert:
             config = json.load(open(os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'train', 'config.json')))
             if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
-                from XMLHandler import XMLHandler
-                xml = XMLHandler(particle, filename=f'{os.path.dirname(args.input_file)}/binning_dataset_1_{particle}s.xml')
-                config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'
+                layer_boundaries = get_layer_boundaries(input_data, args.relevant_layers)
+                bin_number = layer_boundaries[1:] - layer_boundaries[:-1]
+                config_string = f'normlayer__{len(args.relevant_layers)}__{":".join([ str(x) for x in bin_number if x > 0 ])}'
                 if args.preprocess in ['normlayer3']:
                     config_string += '__mergelayer'
             else:
@@ -489,22 +485,15 @@ def auc_model_i(args, model_i):
             print('\033[92m[INFO] Cache\033[0m', 'model', model_i, 'classifer_results', classifer_results['AUC'])
             return classifer_results
 
-    if 'dataset1' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml'
-    elif 'dataset2' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_2.xml'
-    elif 'dataset3' in input_file_name:
-        binning_xml = f'{os.path.dirname(input_file_name)}/binning_dataset_3.xml'
-
     categories, Etru_list, Etru_vox, E_incident = get_E_truth(input_file_name, mode='voxel', return_E_vox=True)
     truth_time = time.time() - start_time
     start_time = time.time()
     categories, Egan_list, Egan_vox = get_E_gan(model_i=model_i, input_file_name=input_file_name, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix, mode='voxel', return_E_vox=True)
     gan_time = time.time() - start_time
     start_time = time.time()
-    hlf_class = HighLevelFeatures(particle, filename=binning_xml)
+    hlf_class = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
     tru_array = prepare_high_data_for_classifier(hlf_class, Etru_vox, 0, E_incident)
-    hlf_class = HighLevelFeatures(particle, filename=binning_xml)
+    hlf_class = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
     gan_array = prepare_high_data_for_classifier(hlf_class, np.array(Egan_vox), 1, E_incident)
     train_data, test_data, val_data = ttv_split(tru_array, gan_array)
     eval_acc, eval_auc, eval_JSD = train_evaluate_classifier(parser_args, train_data, val_data, test_data)
@@ -568,6 +557,7 @@ if __name__ == '__main__':
     """Get arguments from command line."""
     parser = ArgumentParser(description="\033[92mConfig for training.\033[0m")
     parser.add_argument('-i', '--input_file', type=str, required=False, default='', help='Training h5 file name (default: %(default)s)')
+    parser.add_argument('--relevant_layers', type=int, required=True, nargs='+', help='Relevant layers (Photons [0, 1, 2, 3, 12])')
     parser.add_argument('-t', '--train_path', type=str, required=True, default='../output/dataset1/v1', help='--out_path from train.py (default: %(default)s)')
     parser.add_argument('-e', '--eta_slice', type=str, required=False, default='20_25', help='--out_path from train.py (default: %(default)s)')
     parser.add_argument('--debug', required=False, action='store_true', help='Debug mode (default: %(default)s)')
@@ -581,4 +571,5 @@ if __name__ == '__main__':
     parser.add_argument('--istiming', required=False, nargs='+', default=False, help='Measure timing: a tuple of three: batch, Ekin, trials (default: %(default)s)')
     parser.add_argument('--convert', required=False, action='store_true', help='Convert best model to lwtnn (default: %(default)s)')
     args = parser.parse_args()
+    print(args)
     main(args)

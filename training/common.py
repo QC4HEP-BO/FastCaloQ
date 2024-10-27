@@ -3,6 +3,7 @@ np.set_printoptions(suppress=True)
 import h5py, os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from pdb import set_trace
 
 def particle_latex_name(particle):
@@ -161,9 +162,15 @@ def split_energy(input_file, vector):
     if isinstance(vector, dict):
         new_dict = {}
         for k in vector:
-            categories, new_dict[k] = _split_energy(input_file, vector[k].reshape(-1,1))
+            if vector[k].ndim == 1:
+                vector[k] = vector[k].reshape(-1,1)
+            categories, new_dict[k] = _split_energy(input_file, vector[k])
         return categories, new_dict
     else:
+        if vector.ndim == 1:
+            vector = vector.reshape(-1, 1)
+        if input_file.ndim == 1:
+            input_file = input_file.reshape(-1, 1)
         categories, vector_list = _split_energy(input_file, vector)
         return categories, vector_list
 
@@ -179,7 +186,7 @@ def _split_energy(input_file, vector):
     else: # for GAN evaluation: predict more statistics than the Geant size
         #energies = input_file
         #kin_label = np.log2(input_file).astype(int)
-        kin_label = input_file
+        kin_label = input_file.reshape(-1, 1)
         categories = np.unique(kin_label)
 
     joint_array = np.concatenate([kin_label, vector], axis=1)

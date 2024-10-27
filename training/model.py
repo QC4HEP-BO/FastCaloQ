@@ -6,6 +6,7 @@ import time
 from glob import glob
 import matplotlib.pyplot as plt
 import random
+from pdb import set_trace
 
 import tensorflow as tf
 from tensorflow.keras import layers
@@ -15,9 +16,6 @@ from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Wrapper
 from functools import partial
 from tensorflow.keras.layers import Layer
-
-from pdb import set_trace
-
 
 class WGANGP:
     def __init__(self, job_config, hp_config, logger, config_string=None):
@@ -346,34 +344,34 @@ class WGANGP:
         model = tf.keras.Sequential()
         if self.dmodel == 'spectral_norm':
             from tensorflow.keras.layers import SpectralNormalization
-            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node, input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros"))
+            model.add(tf.keras.Input(shape=(self.nvoxels + self.conditional_dim,)))
+            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node, kernel_initializer=initializer, bias_initializer="zeros"))
             model.add(layers.ReLU())
             model.add(SpectralNormalization(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,
-                                    input_shape=(int(self.discriminatorLayers[0] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
+                                    kernel_initializer=initializer,bias_initializer="zeros"))
                     )
             model.add(layers.ReLU())
             model.add(SpectralNormalization(layers.Dense(int(self.discriminatorLayers[2] * self.D_size), use_bias=bias_node,
-                                    input_shape=(int(self.discriminatorLayers[1] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
+                                    kernel_initializer=initializer,bias_initializer="zeros"))
                     )
             model.add(layers.ReLU())
             model.add(SpectralNormalization(layers.Dense(1, use_bias=bias_node,
-                                    input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
+                                    kernel_initializer=initializer,bias_initializer="zeros"))
                 )
         elif self.dmodel == 'dense':
-            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node,
-                                    input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros")
-                    )
+            model.add(tf.keras.Input(shape=(self.nvoxels + self.conditional_dim,)))
+            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node, kernel_initializer=initializer, bias_initializer="zeros"))
             model.add(layers.ReLU())
             model.add(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,
-                                    input_shape=(int(self.discriminatorLayers[0] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
+                                    kernel_initializer=initializer,bias_initializer="zeros")
                     )
             model.add(layers.ReLU())
             model.add(layers.Dense(int(self.discriminatorLayers[2] * self.D_size), use_bias=bias_node,
-                                    input_shape=(int(self.discriminatorLayers[1] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
+                                    kernel_initializer=initializer,bias_initializer="zeros")
                     )
             model.add(layers.ReLU())
             model.add(layers.Dense(1, use_bias=bias_node,
-                                    input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
+                                    kernel_initializer=initializer,bias_initializer="zeros")
                 )
 
         if not self.no_output:
@@ -620,7 +618,7 @@ class WGANGP:
                 times.append(time.time() - start)
             print('batch', batch, 'Ekin', Ekin, 'averaged_over', ntrials, 'mean', np.mean(times)*1000, 'std', np.std(times)*1000, 'ms', times)
             return
-        x_fake = self.G(inputs=[z, labels])
+        x_fake = self.G(inputs=[z, tf.convert_to_tensor(labels)])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
             x_fake = x_fake[:, :-self.nlayers]
