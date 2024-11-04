@@ -190,7 +190,8 @@ def _split_energy(input_file, vector):
         categories = np.unique(kin_label)
 
     joint_array = np.concatenate([kin_label, vector], axis=1)
-    joint_array = joint_array[joint_array[:, 0].argsort()]
+    #joint_array = joint_array[joint_array[:, 0].argsort()]
+    joint_array = joint_array[np.lexsort((np.arange(len(joint_array)), joint_array[:, 0]))] # this preserve the order when equal
     vector_list = np.split(joint_array[:,1:], np.unique(joint_array[:, 0], return_index=True)[1][1:])
     return categories, vector_list
 

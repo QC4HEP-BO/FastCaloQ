@@ -213,7 +213,7 @@ class WGANGP:
             G = layers.BatchNormalization()(G)
             G = layers.Activation(activations.swish)(G)
             for index, nvoxels in enumerate(self.nvoxels_per_layer):
-                output_layer = layers.Dense(nvoxels, activation='softmax')(G)
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(G)
                 if index == 0:
                     output_voxels = output_layer
                 else:
@@ -236,7 +236,7 @@ class WGANGP:
             G = layers.BatchNormalization()(G)
             G = layers.Activation(activations.swish)(G)
             for index, nvoxels in enumerate(self.nvoxels_per_layer):
-                output_layer = layers.Dense(nvoxels, activation='softmax')(G)
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(G)
                 if index == 0:
                     output_voxels = output_layer
                 else:

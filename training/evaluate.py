@@ -68,6 +68,7 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
         return categories, vector_list, vector, Y_train
     if normalise:
         return categories, vector_list, Y_train
+
     return categories, vector_list
 
 def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', preprocess=None, suffix='', return_E_vox=False, normalise_by=None, istiming=False):

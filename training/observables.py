@@ -1,6 +1,7 @@
 # From https://gitlab.cern.ch:8443/atlas-simulation-fastcalosim/fastcaloml/CaloINN/-/blob/main/src/plotting_helpers/observables.py?ref_type=heads
 
 import numpy as np
+from pdb import set_trace
 
 # Compute layer_boundaries (number of voxels in current and preceding layers)
 # layer_boundaries = [0, size_layer_0, size_layer_0 + size_layer_1, ...]

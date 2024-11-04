@@ -20,6 +20,7 @@ prep=`echo $config_mask | cut -d '-' -f 3 | cut -d 'P' -f 2`
 label_scheme=`echo $config_mask | cut -d '-' -f 4 | cut -d 'L' -f 2`
 split_energy=`echo $config_mask | cut -d '-' -f 5 | cut -d 'S' -f 2`
 relevant_layer=$(echo "${relevant_layer//_/ }")
+max_iter=400000
 
 echo input=$input
 echo output=$output
@@ -29,6 +30,7 @@ echo loading=$loading
 echo label_scheme=$label_scheme
 echo split_energy=$split_energy
 echo relevant_layer=$relevant_layer
+echo max_iter=$max_iter
 
 if [[ $mask == ?(n)+([0-9]) ]]; then
     version='v2'
@@ -67,7 +69,7 @@ fi
 
 if [[ ${task} == *'train'* ]]; then
     #command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition}"
-    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --relevant_layer ${relevant_layer} --max_iter 1000000"
+    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --relevant_layer ${relevant_layer} --max_iter ${max_iter}"
 else
     command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --relevant_layer ${relevant_layer} --checkpoint ${evaluate_addition}"
 fi

@@ -34,6 +34,7 @@ class HighLevelFeatures:
         #                  enumerate(xml.r_edges) if len(redge) > 1]
 
         self.E_tot = None
+        self.E_layers_reference = {}
         self.E_layers = {}
         self.EC_etas = {}
         self.EC_phis = {}
@@ -45,15 +46,21 @@ class HighLevelFeatures:
         self.all_layers = [int(key.split("_")[-1]) for key in self.input_data.keys() if key.startswith("energy_layer_")].sort()
         #self.bin_edges = []
         self.relevantLayers = relevant_layers
-        self._get_layer_boundaries()
 
-    def _get_layer_boundaries(self):
+    def _get_layer_boundaries(self, data):
         for layer in self.relevantLayers:
-            self.E_layers[layer] = self.input_data[f'energy_layer_{layer}'][:]
+            self.E_layers_reference[layer] = self.input_data[f'energy_layer_{layer}'][:]
+
+        import copy
+        self.E_layers = copy.deepcopy(self.E_layers_reference)
 
         self.layer_boundaries = [0]
-        for _, layer in self.E_layers.items():
+        for _, layer in self.E_layers_reference.items():
             self.layer_boundaries.append(layer.shape[1] + self.layer_boundaries[-1])
+
+        for ilayer in range(len(self.layer_boundaries)-1):
+            self.E_layers[ilayer] = data[:, self.layer_boundaries[ilayer]:self.layer_boundaries[ilayer+1]]
+
         return self.layer_boundaries
 
     def _calculate_EC(self, eta, phi, energy):
@@ -80,7 +87,6 @@ class HighLevelFeatures:
         """ Computes all high-level features for the given data """
         self.E_tot = data.sum(axis=-1)
 
-
         R_binstarts = []
         coordinates = [[],[]]
         
@@ -105,7 +111,8 @@ class HighLevelFeatures:
         coordinates[1] = np.concatenate(coordinates[1])
         coordinates = np.stack(coordinates)
 
-
+        # Update self.E_layers using data
+        self._get_layer_boundaries(data)
         
         for l, layer in enumerate(self.relevantLayers):
             self.EC_etas[layer], self.EC_phis[layer] = calc_shower_mean(layer_energy=self.E_layers[layer], layer_boundaries=self.layer_boundaries, layer=l, coordinates=coordinates, direction='both')
