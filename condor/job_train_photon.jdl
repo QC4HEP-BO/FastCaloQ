@@ -41,8 +41,8 @@ relevant_layer = 0_1_2_3_12
 #Queue 1
 #Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo3-M-PnormlayerMichele2-L.1
 #Queue 1
-Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo4-M-PnormlayerMichele2-L.1
-Queue 1
+#Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo4-M-PnormlayerMichele2-L.1
+#Queue 1
 #Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo5-M-PnormlayerMichele2-L.1
 #Queue 1
 #Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo6-M-PnormlayerMichele2-L.1
@@ -51,3 +51,14 @@ Queue 1
 #Queue 1
 #Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo8-M-PnormlayerMichele2-L.1
 #Queue 1
+
+Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo81-M-PnormlayerMichele2-L.1
+Queue 1
+Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo82-M-PnormlayerMichele2-L.1
+Queue 1
+Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo83-M-PnormlayerMichele2-L.1
+Queue 1
+Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo84-M-PnormlayerMichele2-L.1
+Queue 1
+Arguments = $(train_eval) $(relevant_layer) ../input/dataset1/dataset_020_photons_positive.hdf5 BNswishCustMichele2_hpo85-M-PnormlayerMichele2-L.1
+Queue 1

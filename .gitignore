@@ -6,3 +6,4 @@ output
 **/.Xauthority
 **/.bash_history
 condor/log/
+training/run.sh

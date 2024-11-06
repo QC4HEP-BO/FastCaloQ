@@ -41,8 +41,8 @@ def main(args):
             continue
         tot_iter = completion_check(ifile)
         df = pd.read_csv(f'{csv_file}')
-        chi2 = float(df['All'])
-        iteration = int(df['ckpt'])
+        chi2 = float(df['All'].iloc[0])
+        iteration = int(df['ckpt'].iloc[0])
 
         results['particle'].append(particle)
         results['eta'].append(int(eta_min))
@@ -54,6 +54,7 @@ def main(args):
         results['folder'].append(folder)
     dfs = pd.DataFrame.from_dict(results).sort_values(by=['particle', 'eta', 'model', 'hp'])
     for particle, df in dfs.groupby(by=['particle']):
+        particle = particle[0]
         out_folder = args.input+'/' if os.path.isdir(args.input) else (args.input.rstrip() + '_')
         df.to_csv(f'{out_folder}results_{particle}.csv', index=False)
         print('\033[92m[INFO] Save to\033[0m', f'{out_folder}results_{particle}.csv')

@@ -1,0 +1,5 @@
+{
+    "G_size": 1,
+    "D_size": 4,
+    "optimizer": "adam_cosine"
+}
