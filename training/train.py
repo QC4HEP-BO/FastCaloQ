@@ -258,6 +258,19 @@ def plot_input(args, X_train, output):
     out_file = os.path.join(output, f'input_{particle}_{args.preprocess}.pdf')
     plot_energy_vox(categories, [xtrain_list], label_list=['Input'], nvox='all', logx=False, \
             particle=particle, output=out_file, draw_ref=False, xlabel='Energy of voxel as training input [MeV]')
+    hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
+    layer_boundaries = hlf._get_layer_boundaries(X_train)
+    for ilayer in range(len(args.relevant_layers)):
+        categories, xtrain_list = split_energy(kin, X_train[:, layer_boundaries[ilayer]:layer_boundaries[ilayer+1]])
+        out_file = os.path.join(output, f'input_{particle}_layer{args.relevant_layers[ilayer]}_{args.preprocess}.pdf')
+        plot_energy_vox(categories, [xtrain_list], label_list=['Input'], nvox='all', logx=False, \
+                particle=particle, output=out_file, draw_ref=False, xlabel='Energy of voxel as training input [MeV]')
+    if X_train.shape[1] > layer_boundaries[-1]:
+        # training dim is larger than number of voxels
+        categories, xtrain_list = split_energy(kin, X_train[:, layer_boundaries[ilayer+1]:])
+        out_file = os.path.join(output, f'input_{particle}_additional_{args.preprocess}.pdf')
+        plot_energy_vox(categories, [xtrain_list], label_list=['Input'], nvox='all', logx=False, \
+                particle=particle, output=out_file, draw_ref=False, xlabel='Energy of voxel as training input [MeV]')
     print('\033[92m[INFO] Save to\033[0m', out_file)
 
 if __name__ == '__main__':

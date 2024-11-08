@@ -1,5 +1,7 @@
 {
     "G_size": 1,
     "D_size": 4,
+    "G_lr": 0.01,
+    "D_lr": 0.01,
     "optimizer": "adamw_exponential"
 }

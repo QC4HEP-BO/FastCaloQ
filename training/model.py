@@ -86,11 +86,11 @@ class WGANGP:
         
         # Optimizer
         if '_cosine' in self.optimizer:
-            decay_steps = 10000 * tf.cast(self.datasize // self.batchsize, tf.int64)
-            G_lr_Decay = tf.keras.optimizers.schedules.CosineDecay(self.G_lr, decay_steps, alpha=1e-2, name='G_CosineDecay')
-            D_lr_Decay = tf.keras.optimizers.schedules.CosineDecay(self.D_lr, decay_steps, alpha=1e-2, name='D_CosineDecay')
+            decay_steps = int(1e6) * tf.cast(self.datasize // self.batchsize, tf.int64)
+            G_lr_Decay = tf.keras.optimizers.schedules.CosineDecay(self.G_lr, decay_steps, alpha=0.1, name='G_CosineDecay')
+            D_lr_Decay = tf.keras.optimizers.schedules.CosineDecay(self.D_lr, decay_steps, alpha=0.1, name='D_CosineDecay')
         elif '_exponential' in self.optimizer:
-            decay_steps = 10000 * tf.cast(self.datasize // self.batchsize, tf.int64)
+            decay_steps = int(1e6) * tf.cast(self.datasize // self.batchsize, tf.int64)
             G_lr_Decay = tf.keras.optimizers.schedules.ExponentialDecay(self.G_lr, decay_steps, decay_rate=0.7, staircase=True)
             D_lr_Decay = tf.keras.optimizers.schedules.ExponentialDecay(self.D_lr, decay_steps, decay_rate=0.7, staircase=True)
 
@@ -584,6 +584,7 @@ class WGANGP:
         ax.plot(step, lr, ls='--', label='D lr')
         ax.set_xlabel("Steps")
         ax.set_ylabel("Learning Rate")
+        ax.set_yscale('log')
         ax.grid(True)
         ax.legend(fontsize=10)
         plt.savefig(os.path.join(self.train_folder, 'learningrate.pdf'))
