@@ -246,6 +246,216 @@ class WGANGP:
             output_totalE = layers.Dense(1, activation='relu')(G)
             output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(G)
             G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNswishCustMichele2AddCommonDense": #formerly "BNswishCustMichele2WithExtraLayer"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(G)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(G)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNswishCustMichele2AddDensePerToughLayer": #formerly "BNswishCustMichele2WithFocus"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                if index == 1 or index == 2:
+                    output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(G)
+                else:
+                    output_layer = layers.Dense(nvoxels.numpy(),use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+                    output_layer = layers.BatchNormalization()(output_layer)
+                    output_layer = layers.Activation(activations.swish)(output_layer)
+                    output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(output_layer)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(G)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNSwishCustMichele2AddDensePerLayer": #formerly "BNswishCustMichele2WithFocusForAllLayers"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                output_layer = layers.Dense(nvoxels.numpy(),use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+                output_layer = layers.BatchNormalization()(output_layer)
+                output_layer = layers.Activation(activations.swish)(output_layer)
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(output_layer)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer),use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            output_layersE = layers.BatchNormalization()(output_layersE)
+            output_layersE = layers.Activation(activations.swish)(output_layersE)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(output_layersE)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNswishCustMichele2Add2DensePerLayer": #formerly "BNswishCustMichele2WithFocusForAllLayers2x"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                output_layer = layers.Dense(nvoxels.numpy(),use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+                output_layer = layers.BatchNormalization()(output_layer)
+                output_layer = layers.Activation(activations.swish)(output_layer)
+                output_layer = layers.Dense(nvoxels.numpy(),use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(output_layer)
+                output_layer = layers.BatchNormalization()(output_layer)
+                output_layer = layers.Activation(activations.swish)(output_layer)
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(output_layer)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer),use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            output_layersE = layers.BatchNormalization()(output_layersE)
+            output_layersE = layers.Activation(activations.swish)(output_layersE)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(output_layersE)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNswishCustMichele2AddDenseCommonToToughLayers": #formerly "BNswishCustMichele2WithFocusSingleSpecialisedLayer"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            singleSpecialisedLayerSize = 0
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                if index != 1 and index != 2:
+                    singleSpecialisedLayerSize = singleSpecialisedLayerSize + nvoxels.numpy()
+            singleSpecialisedLayer = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            singleSpecialisedLayer = layers.BatchNormalization()(singleSpecialisedLayer)
+            singleSpecialisedLayer = layers.Activation(activations.swish)(singleSpecialisedLayer)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                if index == 1 or index == 2:
+                    output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(G)
+                else:
+                    output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(singleSpecialisedLayer)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(G)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNswishCustMichele2AddDenseCommonToLayers": #formerly "BNswishCustMichele2WithFocusSingleSpecialisedLayerForAllLayers"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            singleSpecialisedLayerSize = 0
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+            singleSpecialisedLayerSize = singleSpecialisedLayerSize + nvoxels.numpy()
+            singleSpecialisedLayer = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            singleSpecialisedLayer = layers.BatchNormalization()(singleSpecialisedLayer)
+            singleSpecialisedLayer = layers.Activation(activations.swish)(singleSpecialisedLayer)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(singleSpecialisedLayer)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(G)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
+        elif self.model == "BNswishCustMichele2Add2DenseCommonToLayers": #formerly "BNswishCustMichele2WithFocusSingleSpecialisedLayerForAllLayers2x"
+            initializer = tf.keras.initializers.glorot_normal()
+            G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[1],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.BatchNormalization()(G)
+            G = layers.Activation(activations.swish)(G)
+            singleSpecialisedLayerSize = 0
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+            singleSpecialisedLayerSize = singleSpecialisedLayerSize + nvoxels.numpy()
+            singleSpecialisedLayer = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            singleSpecialisedLayer = layers.BatchNormalization()(singleSpecialisedLayer)
+            singleSpecialisedLayer = layers.Activation(activations.swish)(singleSpecialisedLayer)
+            singleSpecialisedLayer = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(singleSpecialisedLayer)
+            singleSpecialisedLayer = layers.BatchNormalization()(singleSpecialisedLayer)
+            singleSpecialisedLayer = layers.Activation(activations.swish)(singleSpecialisedLayer)
+            for index, nvoxels in enumerate(self.nvoxels_per_layer):
+                output_layer = layers.Dense(nvoxels.numpy(), activation='softmax')(singleSpecialisedLayer)
+                if index == 0:
+                    output_voxels = output_layer
+                else:
+                    output_voxels = layers.Concatenate()([output_voxels, output_layer])
+            output_totalE = layers.Dense(1, activation='relu')(G)
+            output_layersE = layers.Dense(len(self.nvoxels_per_layer), activation='softmax')(G)
+            G = layers.Concatenate()([output_voxels,output_layersE,output_totalE])
         elif self.model == "BNswishReLU":
             initializer = tf.keras.initializers.glorot_normal()
             G = layers.Dense(self.generatorLayers[0],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(con)
