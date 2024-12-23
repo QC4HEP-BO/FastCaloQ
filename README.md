@@ -46,7 +46,7 @@ ML models are defined in `training/model.py`.
 The best model found so far is `BNswishCustMichele2Add2DenseToAllLayers`.
 The following commands run this model (or other models with different names) will the desired relevant layers for photons (0, 1, 2, 3, 12) and 1 million iterations:
 ```
-python train.py -i ../input/dataset1/dataset_020_photons_positive.hdf5 -m BNswishCustMichele2Add2DenseToAllLayers -o <output_dir> -c ../config/config_hpo8.json -p BNswishCustMichele2Add2DenseToAllLayers --relevant_layer 0 1 2 3 12 --max_iter 10000000
-python evaluate.py -i ../input/dataset1/dataset_020_photons_positive.hdf5 -t <output_dir> --relevant_layer 0 1 2 3 12 --checkpoint -p BNswishCustMichele2Add2DenseToAllLayers
+python train.py -i ../input/dataset1/dataset_020_photons_positive.hdf5 -m BNswishCustMichele2Add2DenseToAllLayers -o <output_dir> -c ../config/config_hpo8.json -p normlayerMichele2 --relevant_layer 0 1 2 3 12 --max_iter 10000000
+python evaluate.py -i ../input/dataset1/dataset_020_photons_positive.hdf5 -t <output_dir> --relevant_layer 0 1 2 3 12 --checkpoint -pnormlayerMichele2  
 ```
 `config/config_hpo8.json` stores the hyperparameter values that were found to give good performance.
