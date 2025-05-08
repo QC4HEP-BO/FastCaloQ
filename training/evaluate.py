@@ -39,6 +39,8 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
         hlf.CalculateFeatures(X_train)
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
+        hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
+        hlf.CalculateFeatures(X_train)
         E_vox = X_train
     elif mode == 'layer':
         hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
@@ -68,6 +70,8 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
         return categories, vector_list, vector, Y_train
     if normalise:
         return categories, vector_list, Y_train
+    if mode == 'voxel':
+        return categories, vector_list, hlf, Y_train
 
     return categories, vector_list
 
@@ -75,6 +79,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     kin, particle = get_kin(input_file_name)
     input_data = h5py.File(f'{input_file_name}', 'r')
     kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
+    if args.center_eta_conditioning:
+        center_eta = input_data['center_eta'][:]
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
     gan_statistics = -1 # -1 means the same statistics as input training, alternatively can use 10000 for every energy point, but this is found to be unstable in terms of chi2 values
@@ -84,6 +90,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
         kin = kin.reshape(-1,1)
 
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
+    if args.center_eta_conditioning:
+        label_kin = np.concatenate((label_kin, center_eta.reshape(-1,1)), axis=1)
     if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
         layer_boundaries = get_layer_boundaries(input_data, args.relevant_layers)
         bin_number = layer_boundaries[1:] - layer_boundaries[:-1]
@@ -92,8 +100,14 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             config_string += '__mergelayer'
     else:
         config_string = None
-    wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
-    E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming)
+    wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, toggleConditionEtaPhi=args.eta_phi_conditioning)
+    if args.eta_phi_conditioning:
+        coordinates = CalculateCoordinates(input_data=input_data, relevant_layers=args.relevant_layers)
+        coordinates = np.tile(coordinates, (label_kin.shape[0], 1))
+        print("Also adding coordinates with shape", coordinates.shape)
+        E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming, coordinates=coordinates)
+    else:
+        E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming)
     if istiming:
         return
     if preprocess is not None:
@@ -113,7 +127,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
         hlf.CalculateFeatures(np.array(E_vox))
         E_tot = hlf.GetEtot()
     elif mode == 'voxel':
-        pass
+        hlf = HighLevelFeatures(particle, filename=args.input_file, relevant_layers=args.relevant_layers)
+        hlf.CalculateFeatures(np.array(E_vox))
         #input_data= h5py.File(f'{input_file_name}', 'r')
         #E_vox = input_data['showers'][:]
     elif mode == 'layer':
@@ -146,6 +161,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
         raise NotImplementedError("This feature is not implemented yet.")
     if return_E_vox:
         return categories, vector_list, E_vox
+    if mode == 'voxel':
+        return categories, vector_list, hlf
     return categories, vector_list
 
 def plot_energy_layer(particle, model_i, input_file_name, train_path, eta_slice):
@@ -230,7 +247,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
     ndf_tot = chi2_tot = 0
     for index, energy in enumerate(categories):
         # Convert energy to GeV
-        GeV = 1 if args.normalise else 1000 
+        GeV = 1 if (args.normalise or args.showers) else 1000 
         etot = Etot_list[index] / GeV
         egan = Egan_list[index] / GeV
 
@@ -259,12 +276,16 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
         chi2_tot += chi2
         ndf_tot += ndf
         energy = round(energy) if len(str(energy)) > 0 and str(energy)[-1] == '0' else energy
-        results.append((f'{energy} MeV', chi2/ndf))
+        if args.showers is not None:
+            results.append((f'{energy} MeV', 0 if chi2==0 and ndf==0 else chi2/ndf))
+        else:
+            results.append((f'{energy} MeV', chi2/ndf))
         if logx:
             ax.set_xscale('log')
         if logy:
             ax.set_yscale('symlog')
         if plot_chi2:
+            print("chi^2 =", chi2, " ndf =", ndf)
             ax.text(0.02, 0.88, "$\chi^2$:{:.1f}".format(chi2 / ndf), transform=ax.transAxes, va="top", ha="left", fontsize=20)
 
     handles, labels = ax.get_legend_handles_labels()
@@ -313,24 +334,70 @@ def plot_model_i(args, model_i):
     if args.normalise:
         categories, Etot_list, Y_train = get_E_truth(args.input_file, normalise=args.normalise)
     else:
-        categories, Etot_list = get_E_truth(args.input_file, normalise=args.normalise)
+        if args.showers is not None:
+            categories, Etot_list, hlf_g4, Y_train = get_E_truth(args.input_file, mode='voxel', normalise=args.normalise) # Etot_list has Evox data inside
+        else:
+            categories, Etot_list = get_E_truth(args.input_file, normalise=args.normalise)
     truth_time = time.time() - start_time
     start_time = time.time()
-    categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix, normalise_by=(Y_train if args.normalise else None))
+    if args.showers is not None:
+        categories, Egan_list, hlf_gan = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, mode='voxel', preprocess=args.preprocess, suffix=suffix, normalise_by=(Y_train if args.normalise else None)) # Egan_list has Evox data inside
+    else:
+        categories, Egan_list = get_E_gan(model_i=model_i, input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice, preprocess=args.preprocess, suffix=suffix, normalise_by=(Y_train if args.normalise else None))
     gan_time = time.time() - start_time
     start_time = time.time()
 
     eta_min, eta_max = tuple(args.eta_slice.split('_'))
     ax_text = particle_latex_name(particle)+ ", " + str("{:.2f}".format(int(eta_min) / 100, 2)) + r"$<|\eta|<$" + str("{:.2f}\n".format((int(eta_max)) / 100, 2)) + "Iter: {}".format(int(model_i)*1000)
+    #if args.showers:
+    #    g4_WidthPhis = hlf_g4.GetWidthPhis()
+    #    gan_WidthPhis = hlf_gan.GetWidthPhis()
+    if args.showers is not None:
+        chosen_shower_var = args.showers.split("_")[0]
+        if chosen_shower_var == "ECEtas":
+            g4_shower_var_getter = hlf_g4.GetECEtas
+            gan_shower_var_getter = hlf_gan.GetECEtas
+        elif chosen_shower_var == "ECPhis":
+            g4_shower_var_getter = hlf_g4.GetECPhis
+            gan_shower_var_getter = hlf_gan.GetECPhis
+        elif chosen_shower_var == "WidthEtas":
+            g4_shower_var_getter = hlf_g4.GetWidthEtas
+            gan_shower_var_getter = hlf_gan.GetWidthEtas
+        elif chosen_shower_var == "WidthPhis":
+            g4_shower_var_getter = hlf_g4.GetWidthPhis
+            gan_shower_var_getter = hlf_gan.GetWidthPhis
+        else:
+            raise NotImplementedError(f"Shower shape variable {chosen_shower_var} is not implemented or spelled wrong.")
+        g4_shower_var = g4_shower_var_getter()
+        gan_shower_var = gan_shower_var_getter()
+        print("Evaluation running on shower shape variable", chosen_shower_var)
     config = {
         'plot_chi2': True,
         'ax_text': ax_text,
         'output_name': plot_name, 
         'nbins': 30,
     }
-    chi2_results = plot_Etot(categories, Etot_list, Egan_list, config)
+    #if args.showers:
+    #    g4_WidthPhis_rearranged = np.asarray([g4_WidthPhis.get(2)[Y_train==k] for k in np.unique(Y_train)])
+    #    gan_WidthPhis_rearranged = np.asarray([gan_WidthPhis.get(2)[Y_train==k] for k in np.unique(Y_train)])
+    #    chi2_results = plot_Etot(categories, g4_WidthPhis_rearranged, gan_WidthPhis_rearranged, config)
+    if args.showers is not None:
+        chosen_layer = int(args.showers.split("_")[1])
+        try:
+            g4_shower_var_rearranged = np.asarray([g4_shower_var.get(chosen_layer)[Y_train==k] for k in np.unique(Y_train)])
+            gan_shower_var_rearranged = np.asarray([gan_shower_var.get(chosen_layer)[Y_train==k] for k in np.unique(Y_train)])
+        except TypeError:
+            raise TypeError("If you're using --relevant_layers, make sure you've provided to the --showers flag a layer number that is included among them.")
+        chi2_results = plot_Etot(categories, g4_shower_var_rearranged, gan_shower_var_rearranged, config)
+    else:
+        chi2_results = plot_Etot(categories, Etot_list, Egan_list, config)
     plot_time = time.time() - start_time
-    print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
+    #if args.showers:
+    #    print('\033[92m[INFO] Evaluate result on WidthPhis (layer 2)\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
+    if args.showers is not None:
+        print('\033[92m[INFO] Evaluate result on', chosen_shower_var, 'for layer', chosen_layer, '\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
+    else:
+        print('\033[92m[INFO] Evaluate result\033[0m', 'model', model_i, 'chi2', f'{chi2_results["All"]:.2f}', f'time (truth) {truth_time:.1f}s (gan) {gan_time:.1f}s (plot) {plot_time:.1f}s')
     return {f'ckpt': model_i, **chi2_results}
 
 def chunks(lst, n):
@@ -443,7 +510,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
                     config_string += '__mergelayer'
             else:
                 config_string = None
-            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
+            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, toggleConditionEtaPhi=args.eta_phi_conditioning)
             wgan.convert_model(int(best_x/1000))
 
 def gen_h5(energies, showers, output):
@@ -571,6 +638,10 @@ if __name__ == '__main__':
     parser.add_argument('--save_h5', required=False, action='store_true', help='Save H5 https://calochallenge.github.io/homepage/ (default: %(default)s)')
     parser.add_argument('--istiming', required=False, nargs='+', default=False, help='Measure timing: a tuple of three: batch, Ekin, trials (default: %(default)s)')
     parser.add_argument('--convert', required=False, action='store_true', help='Convert best model to lwtnn (default: %(default)s)')
+    #parser.add_argument('--showers', required=False, action='store_true', help='Use shower shape to choose best training iteration (default: %(default)s)')
+    parser.add_argument('--showers', type=str, required=False, default=None, help='Use shower shape to choose best training iteration. Provided string must be of the format VARIABLE_LAYER, where VARIABLE is a shower shape variable among ECEtas, ECPhis, WidthEtas and WidthPhis, and LAYER is the number of the layer where to evaluate the shower shape variable (e.g., ECEtas_2 runs evaluation on shower shape variable ECEtas for layer no. 2) (default: %(default)s)')
+    parser.add_argument('--center_eta_conditioning', required=False, action='store_true', help='To be specified if conditioning was also done on center_eta (default: %(default)s)')
+    parser.add_argument('--eta_phi_conditioning', required=False, action='store_true', help='To be specified if conditioning was also done on eta and phi (default: %(default)s)')
     args = parser.parse_args()
     print(args)
     main(args)
