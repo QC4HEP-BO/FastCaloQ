@@ -182,7 +182,7 @@ def plot_energy_layer(particle, model_i, input_file_name, train_path, eta_slice)
 
     for ilayer in E_vox_list.keys():
         ax_text = particle_latex_name(particle) + ' Layer {}'.format(ilayer)
-        plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected', 'layer', f'plot_{particle}_{args.eta_slice}_{model_i}_layer{ilayer}.pdf')
+        plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected_{}'.format(args.showers if args.showers is not None else 'energy'), 'layer', f'plot_{particle}_{args.eta_slice}_{model_i}_layer{ilayer}.pdf')
         config = {
             'plot_chi2': False,
             'ax_text': ax_text,
@@ -322,8 +322,8 @@ def plot_model_i(args, model_i):
     start_time = time.time()
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
     suffix = '_load' if args.loading else ''
-    df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'chi2.csv')
-    plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{model_i}.pdf')
+    df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', '{}_{}'.format(os.path.splitext(os.path.basename(__file__))[0], args.showers if args.showers is not None else 'energy'), f'chi2.csv')
+    plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', '{}_{}'.format(os.path.splitext(os.path.basename(__file__))[0], args.showers if args.showers is not None else 'energy'), f'plot_{particle}_{args.eta_slice}_{model_i}.pdf')
     if os.path.exists(df_name) and os.path.exists(plot_name):
         df = pd.read_csv(df_name)
         if not args.debug and model_i in df['ckpt'].values:
@@ -408,7 +408,7 @@ def chunks(lst, n):
 def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     suffix = '_load' if args.loading else ''
     particle = args.input_file.split('/')[-1].split('_')[-2][:-1]
-    best_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', f'selected{alt}')
+    best_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected{}_{}'.format(alt, args.showers if args.showers is not None else 'energy'))
     chi_name = os.path.join(best_folder, 'chi2.pdf')
     if not (os.path.exists(chi_name) and cache):
         os.makedirs(best_folder, exist_ok=True)
@@ -464,7 +464,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         models = glob.glob(os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'checkpoints', f'model-{int(best_df["ckpt"].iloc[0])}*'))
         for model in models:
             os.system(f'cp {model} {best_folder}')  
-        plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'plot_{particle}_{args.eta_slice}_{int(best_df["ckpt"].iloc[0])}.*')
+        plot_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', '{}_{}'.format(os.path.splitext(os.path.basename(__file__))[0], args.showers if args.showers is not None else 'energy'), f'plot_{particle}_{args.eta_slice}_{int(best_df["ckpt"].iloc[0])}.*')
         os.system(f'cp {plot_name} {best_folder}')
 
     vox_name = os.path.join(best_folder, 'mask', f'mask_{particle}_{args.eta_slice}_{int(best_df["ckpt"].iloc[0])}_all.pdf')
@@ -487,7 +487,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
         plot_energy_vox(categories, [E_tru_list, E_gan_list], label_list=['Geant4', 'GAN'], kin_list=kin_list, nvox='all', \
                 logx=True, particle=particle, output=vox_name.replace('.pdf', '_normkin_logx.pdf'), draw_ref=False, xlabel="$-$" + f"Log({xlabel})")
     
-        layer_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected', 'layer')
+        layer_folder = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'selected_{}'.format(args.showers if args.showers is not None else 'energy'), 'layer')
         #if not os.path.exists(layer_folder) or len(os.listdir(layer_folder)) == 0:
         #    plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
         plot_energy_layer(particle=particle, model_i=int(best_df["ckpt"].iloc[0]), input_file_name=args.input_file, train_path=args.train_path, eta_slice=args.eta_slice)
@@ -540,7 +540,7 @@ def auc_model_i(args, model_i):
         'cls_lr': 2e-4,
         'mode': 'cls-high',
         'dataset': input_file_name.split('/')[-1].split('_')[-1].split('.')[0],
-        'output_dir': os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], f'evaluate_classifier'),
+        'output_dir': os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', '{}_{}'.format(os.path.splitext(os.path.basename(__file__))[0], args.showers if args.showers is not None else 'energy'), f'evaluate_classifier'),
         'ckpt': model_i,
     }
     parser_args = Namespace(**parser_replacement)
@@ -610,7 +610,7 @@ def main(args):
             results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if (args.debug and not args.istiming) else -1)
             filename = f'classifier.csv'
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
-        df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], filename)
+        df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', '{}_{}'.format(os.path.splitext(os.path.basename(__file__))[0], args.showers if args.showers is not None else 'energy'), filename)
         if os.path.exists(df_name):
             df_old = pd.read_csv(df_name)
             df = pd.concat([df, df_old]).drop_duplicates(subset=['ckpt']).reset_index(drop=True)
