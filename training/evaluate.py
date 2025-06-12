@@ -226,7 +226,7 @@ def chi2caloflow(hist1, hist2):
     ret = np.divide(ret, sigma_sq, out=np.zeros_like(ret), where=sigma_sq!=0)
     return ret.sum()
 
-def plot_Etot(categories, Etot_list, Egan_list, config=None):
+def plot_Etot(categories, Etot_list, Egan_list, config=None, x_axis_label="Energy [GeV]"):
     plot_chi2 = config.get('plot_chi2', False)
     ax_text = config.get('ax_text', '')
     ax_pos = config.get('ax_pos', (0.0, 0.1))
@@ -240,7 +240,7 @@ def plot_Etot(categories, Etot_list, Egan_list, config=None):
     lw = config.get('lw', 2)
     xrange_from_caloflow = config.get('xrange_from_caloflow', False)
 
-    fig, axes = plot_frame(categories, xlabel="Energy [GeV]", ylabel="Entries")
+    fig, axes = plot_frame(categories, xlabel=x_axis_label, ylabel="Entries")
     results = []
     dict([(f'{energy} MeV', 0) for energy in categories])
 
@@ -388,7 +388,15 @@ def plot_model_i(args, model_i):
             gan_shower_var_rearranged = np.asarray([gan_shower_var.get(chosen_layer)[Y_train==k] for k in np.unique(Y_train)])
         except TypeError:
             raise TypeError("If you're using --relevant_layers, make sure you've provided to the --showers flag a layer number that is included among them.")
-        chi2_results = plot_Etot(categories, g4_shower_var_rearranged, gan_shower_var_rearranged, config)
+        if chosen_shower_var=="ECEtas":
+            chosen_shower_var_latex = r"EC $\eta$"
+        elif chosen_shower_var=="ECPhis":
+            chosen_shower_var_latex = r"EC $\phi$"
+        elif chosen_shower_var=="WidthEtas":
+            chosen_shower_var_latex = r"Width $\eta$"
+        elif chosen_shower_var=="WidthPhis":
+            chosen_shower_var_latex = r"Width $\phi$"
+        chi2_results = plot_Etot(categories, g4_shower_var_rearranged, gan_shower_var_rearranged, config, chosen_shower_var_latex)
     else:
         chi2_results = plot_Etot(categories, Etot_list, Egan_list, config)
     plot_time = time.time() - start_time
