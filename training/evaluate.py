@@ -81,6 +81,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     if args.center_eta_conditioning:
         center_eta = input_data['center_eta'][:]
+    if args.phi_mod_conditioning:
+        phi_mod = input_data['phi_mod'][:]
     config = json.load(open(os.path.join(train_path, f'{particle}s_eta_{eta_slice}{suffix}', 'train', 'config.json')))
 
     gan_statistics = -1 # -1 means the same statistics as input training, alternatively can use 10000 for every energy point, but this is found to be unstable in terms of chi2 values
@@ -92,6 +94,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     label_kin = kin_to_label(kin, scheme=config['hp_config']['label_scheme'])
     if args.center_eta_conditioning:
         label_kin = np.concatenate((label_kin, center_eta.reshape(-1,1)), axis=1)
+    if args.phi_mod_conditioning:
+        label_kin = np.concatenate((label_kin, phi_mod.reshape(-1,1)), axis=1)
     if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
         layer_boundaries = get_layer_boundaries(input_data, args.relevant_layers)
         bin_number = layer_boundaries[1:] - layer_boundaries[:-1]
@@ -649,6 +653,7 @@ if __name__ == '__main__':
     #parser.add_argument('--showers', required=False, action='store_true', help='Use shower shape to choose best training iteration (default: %(default)s)')
     parser.add_argument('--showers', type=str, required=False, default=None, help='Use shower shape to choose best training iteration. Provided string must be of the format VARIABLE_LAYER, where VARIABLE is a shower shape variable among ECEtas, ECPhis, WidthEtas and WidthPhis, and LAYER is the number of the layer where to evaluate the shower shape variable (e.g., ECEtas_2 runs evaluation on shower shape variable ECEtas for layer no. 2) (default: %(default)s)')
     parser.add_argument('--center_eta_conditioning', required=False, action='store_true', help='To be specified if conditioning was also done on center_eta (default: %(default)s)')
+    parser.add_argument('--phi_mod_conditioning', required=False, action='store_true', help='To be specified if conditioning was also done on phi_mod (default: %(default)s)')
     parser.add_argument('--eta_phi_conditioning', required=False, action='store_true', help='To be specified if conditioning was also done on eta and phi (default: %(default)s)')
     args = parser.parse_args()
     print(args)

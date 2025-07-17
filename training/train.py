@@ -106,6 +106,8 @@ def main(args):
     kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
     if args.center_eta_conditioning:
         center_eta = input_data['center_eta'][:]
+    if args.phi_mod_conditioning:
+        phi_mod = input_data['phi_mod'][:]
     if args.label_scheme:
         label_scheme = args.label_scheme
     else:
@@ -117,6 +119,8 @@ def main(args):
     label_kin = kin_to_label(kin, scheme=label_scheme)
     if args.center_eta_conditioning:
         label_kin = np.concatenate((label_kin, center_eta.reshape(-1,1)), axis=1)
+    if args.phi_mod_conditioning:
+        label_kin = np.concatenate((label_kin, phi_mod.reshape(-1,1)), axis=1)
 
     if 'showers' in input_data:
         showers = input_data['showers'][:]
@@ -301,6 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Energy split training (default: %(default)s)')
     parser.add_argument('--max_iter', type=int, required=False, default=1E6, help='Number of iterations (default: %(default)s)')
     parser.add_argument('--center_eta_conditioning', required=False, action='store_true', help='To be specified if conditioning is also done on center_eta (default: %(default)s)')
+    parser.add_argument('--phi_mod_conditioning', required=False, action='store_true', help='To be specified if conditioning is also done on phi_mod (default: %(default)s)')
     parser.add_argument('--eta_phi_conditioning', required=False, action='store_true', help='To be specified if conditioning is also done on eta and phi (default: %(default)s)')
 
     args = parser.parse_args()
