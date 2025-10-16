@@ -18,7 +18,7 @@ from functools import partial
 from tensorflow.keras.layers import Layer
 
 class WGANGP:
-    def __init__(self, job_config, hp_config, logger, config_string=None):
+    def __init__(self, job_config, hp_config, logger, config_string=None, toggleConditionEtaPhi=False):
         tf.keras.backend.set_floatx("float32")
         self.loading = job_config.get('loading', None)
         if config_string:
@@ -79,6 +79,8 @@ class WGANGP:
                 random.seed(22)
                 np.random.seed(22)
                 tf.random.set_seed(22)
+
+        self.toggleConditionEtaPhi = toggleConditionEtaPhi
 
         # Construct D and G models
         self.G = self.make_generator_functional_model()
@@ -541,10 +543,33 @@ class WGANGP:
             for index, nvoxels in enumerate(self.nvoxels_per_layer):
                 singleSpecialisedLayerSize = singleSpecialisedLayerSize + nvoxels.numpy()
             singleSpecialisedLayer = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            if self.toggleConditionEtaPhi:
+                conditionEtaPhi = layers.Input(shape=(singleSpecialisedLayerSize*2,), name="conditionEtaPhi") # this input has eta and phi info concatenated
+                conditionEta = layers.Lambda(lambda x: x[:, :singleSpecialisedLayerSize])(conditionEtaPhi) # selects the half with eta information
+                conditionPhi = layers.Lambda(lambda x: x[:, singleSpecialisedLayerSize:])(conditionEtaPhi) # selects the half with phi information
+                #intermediateEta = layers.Dense(singleSpecialisedLayerSize, use_bias=False, kernel_initializer='identity')(conditionEta)
+                #intermediatePhi = layers.Dense(singleSpecialisedLayerSize, use_bias=False, kernel_initializer='identity')(conditionPhi)
+                #singleSpecialisedLayer = layers.Add()([singleSpecialisedLayer, intermediateEta, intermediatePhi]) # each voxel is conditioned with the corresponding (thanks to kernel_initializer='identity') eta and phi
+                from tensorflow.keras.constraints import Constraint
+                class DiagonalConstraint(Constraint):
+                    def __init__(self):
+                        pass
+                    def __call__(self, w):
+                        return tf.linalg.diag(tf.linalg.diag_part(w))
+                intermediateEta = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros",kernel_constraint=DiagonalConstraint())(conditionEta)
+                intermediatePhi = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros",kernel_constraint=DiagonalConstraint())(conditionPhi)
+                singleSpecialisedLayer = layers.Add()([singleSpecialisedLayer, intermediateEta, intermediatePhi])
             singleSpecialisedLayer = layers.BatchNormalization()(singleSpecialisedLayer)
             singleSpecialisedLayer = layers.Activation(activations.swish)(singleSpecialisedLayer)
             singleSpecialisedLayer = layers.concatenate([singleSpecialisedLayer, condition])
             singleSpecialisedLayer = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(singleSpecialisedLayer)
+            if self.toggleConditionEtaPhi:
+                #intermediateEta = layers.Dense(singleSpecialisedLayerSize, use_bias=False, kernel_initializer='identity')(conditionEta)
+                #intermediatePhi = layers.Dense(singleSpecialisedLayerSize, use_bias=False, kernel_initializer='identity')(conditionPhi)
+                #singleSpecialisedLayer = layers.Add()([singleSpecialisedLayer, intermediateEta, intermediatePhi])
+                intermediateEta = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros",kernel_constraint=DiagonalConstraint())(conditionEta)
+                intermediatePhi = layers.Dense(singleSpecialisedLayerSize,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros",kernel_constraint=DiagonalConstraint())(conditionPhi)
+                singleSpecialisedLayer = layers.Add()([singleSpecialisedLayer, intermediateEta, intermediatePhi])
             singleSpecialisedLayer = layers.BatchNormalization()(singleSpecialisedLayer)
             singleSpecialisedLayer = layers.Activation(activations.swish)(singleSpecialisedLayer)
             singleSpecialisedLayer = layers.concatenate([singleSpecialisedLayer, condition])
@@ -710,7 +735,10 @@ class WGANGP:
             print(self.model, 'not implemented')
             raise NotImplementedError
 
-        generator = Model(inputs=[noise, condition], outputs=G)
+        if self.toggleConditionEtaPhi:
+            generator = Model(inputs=[noise, condition, conditionEtaPhi], outputs=G)
+        else:
+            generator = Model(inputs=[noise, condition], outputs=G)
         if not self.no_output:
             generator.summary()
             with open(os.path.join(self.train_folder, 'model.txt'), 'w') as fp:
@@ -852,7 +880,7 @@ class WGANGP:
         return x_fake
 
     @tf.function
-    def D_loss(self, x_real, cond_label):
+    def D_loss(self, x_real, cond_label, coordinates=None):
         if self.model == "GANv1":
             z = tf.random.uniform([self.batchsize, self.latent_dim],minval=-1,maxval=1,dtype=tf.dtypes.float32,)
             logging.info('latent dist uniform -1, 1')
@@ -862,7 +890,10 @@ class WGANGP:
         else:
             z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
             logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
-        x_fake = self.G(inputs=[z, cond_label])
+        if self.toggleConditionEtaPhi:
+            x_fake = self.G(inputs=[z, cond_label, coordinates])
+        else:
+            x_fake = self.G(inputs=[z, cond_label])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
 
@@ -876,37 +907,50 @@ class WGANGP:
         G_loss = -tf.reduce_mean(D_fake)
         return G_loss
 
-    def getTrainData_ultimate(self, n_iter):
+    def getTrainData_ultimate(self, n_iter, alsoCoordinates=False):
         true_batchsize = tf.cast(tf.math.multiply(self.batchsize, self.dgratio), tf.int64)
         n_samples = tf.cast(tf.gather(tf.shape(self.X), 0), tf.int64)
         n_batch = tf.cast(tf.math.floordiv(n_samples, true_batchsize), tf.int64)
         n_shuffles = tf.cast(tf.math.ceil(tf.divide(n_iter, n_batch)), tf.int64)
-        ds = tf.data.Dataset.from_tensor_slices((self.X, self.Labels))
+        if alsoCoordinates:
+            ds = tf.data.Dataset.from_tensor_slices((self.X, self.Labels, self.Coordinates))
+        else:
+            ds = tf.data.Dataset.from_tensor_slices((self.X, self.Labels))
         ds = ds.shuffle(buffer_size=n_samples).cache().repeat(n_shuffles).batch(true_batchsize, drop_remainder=True).prefetch(4)
         self.ds_iter = iter(ds)
         X_feature_size = tf.gather(tf.shape(self.X), 1)
         Labels_feature_size = tf.gather(tf.shape(self.Labels), 1)
+        if alsoCoordinates:
+            Coordinates_feature_size = tf.gather(tf.shape(self.Coordinates), 1)
         self.X_batch_shape = tf.stack((self.dgratio, self.batchsize, X_feature_size), axis=0)
         self.Labels_batch_shape = tf.stack((self.dgratio, self.batchsize, Labels_feature_size), axis=0)
+        if alsoCoordinates:
+            self.Coordinates_batch_shape = tf.stack((self.dgratio, self.batchsize, Coordinates_feature_size), axis=0)
 
     @tf.function
-    def train_loop(self, X_trains, cond_labels):
+    def train_loop(self, X_trains, cond_labels, coordinates=None):
         for i in tf.range(self.dgratio):
             with tf.GradientTape() as disc_tape:
-                (D_loss_curr, D_fake) = self.D_loss(tf.gather(X_trains, i), tf.gather(cond_labels, i))
+                if self.toggleConditionEtaPhi:
+                    (D_loss_curr, D_fake) = self.D_loss(tf.gather(X_trains, i), tf.gather(cond_labels, i), tf.gather(coordinates, i))
+                else:
+                    (D_loss_curr, D_fake) = self.D_loss(tf.gather(X_trains, i), tf.gather(cond_labels, i))
                 gradients_of_discriminator = disc_tape.gradient(D_loss_curr, self.D.trainable_variables)
                 self.discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, self.D.trainable_variables))
 
         last_index = tf.subtract(self.dgratio, 1)
         with tf.GradientTape() as gen_tape:
             # Need to recompute D_fake, otherwise gen_tape doesn't know the history
-            (D_loss_curr, D_fake) = self.D_loss(tf.gather(X_trains, last_index), tf.gather(cond_labels, last_index))
+            if self.toggleConditionEtaPhi:
+                (D_loss_curr, D_fake) = self.D_loss(tf.gather(X_trains, last_index), tf.gather(cond_labels, last_index), tf.gather(coordinates, last_index))
+            else:
+                (D_loss_curr, D_fake) = self.D_loss(tf.gather(X_trains, last_index), tf.gather(cond_labels, last_index))
             G_loss_curr = self.G_loss(D_fake)
             gradients_of_generator = gen_tape.gradient(G_loss_curr, self.G.trainable_variables)
             self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.G.trainable_variables))
             return D_loss_curr, G_loss_curr
 
-    def train(self, X_train, label):
+    def train(self, X_train, label, coordinates=None):
         checkpoint_dir = os.path.join(self.output, 'checkpoints')
         logging.info(f'Training size X: {X_train.shape}, label: {label.shape}')
         os.makedirs(checkpoint_dir, exist_ok=True)
@@ -924,7 +968,11 @@ class WGANGP:
 
         self.X = tf.convert_to_tensor(X_train, dtype=tf.float32)
         self.Labels = tf.convert_to_tensor(label, dtype=tf.float32)
-        self.getTrainData_ultimate(self.max_iter)
+        if coordinates is not None:
+            self.Coordinates = tf.convert_to_tensor(coordinates, dtype=tf.float32)
+            self.getTrainData_ultimate(self.max_iter, alsoCoordinates=True)
+        else:
+            self.getTrainData_ultimate(self.max_iter)
 
         if self.loading is not None:
             self.saver.restore(self.loading)
@@ -959,7 +1007,10 @@ class WGANGP:
 
 
             getnext_loop_start = time.time()
-            X, Labels = self.ds_iter.get_next()
+            if coordinates is not None:
+                X, Labels, Coordinates = self.ds_iter.get_next()
+            else:
+                X, Labels = self.ds_iter.get_next()
             getnext_loop_stop = time.time()
             dur_getnext_loop += getnext_loop_stop - getnext_loop_start
             if len(existing_models) > 1:
@@ -968,11 +1019,16 @@ class WGANGP:
                 convert_loop_start = time.time()
                 X_trains = tf.reshape(X, self.X_batch_shape)
                 cond_labels = tf.reshape(Labels, self.Labels_batch_shape)
+                if coordinates is not None:
+                    coordinates_tf_reshaped = tf.reshape(Coordinates, self.Coordinates_batch_shape)
                 convert_loop_stop = time.time()
                 dur_convert_loop += convert_loop_stop - convert_loop_start
 
                 train_loop_start = time.time()
-                D_loss_curr, G_loss_curr = self.train_loop(X_trains, cond_labels)
+                if coordinates is not None:
+                    D_loss_curr, G_loss_curr = self.train_loop(X_trains, cond_labels, coordinates_tf_reshaped)
+                else:
+                    D_loss_curr, G_loss_curr = self.train_loop(X_trains, cond_labels)    
                 train_loop_stop = time.time()
                 dur_train_loop += train_loop_stop - train_loop_start
 
@@ -1007,7 +1063,7 @@ class WGANGP:
         if verbose == 'INFO':
             logging.info('Save to %s', os.path.join(self.train_folder, 'loss.pdf'))
 
-    def predict(self, model_i, labels, ischeck=False, istiming=False):
+    def predict(self, model_i, labels, ischeck=False, istiming=False, coordinates=None):
         checkpoint_dir = os.path.join(self.output, 'checkpoints')
         self.saver.restore(f'{checkpoint_dir}/model-{model_i}').expect_partial()
         if ischeck:
@@ -1020,11 +1076,18 @@ class WGANGP:
             times = []
             for i in range(ntrials):
                 start = time.time()
-                x_fake = self.G(inputs=[z[:batch], np.full((batch,) + labels.shape[1:], np.unique(labels)[Ekin])])
+                if self.toggleConditionEtaPhi:
+                    #x_fake = self.G(inputs=[z[:batch], np.full((batch,) + labels.shape[1:], np.unique(labels)[Ekin]), coordinates])
+                    raise NotImplementedError
+                else:
+                    x_fake = self.G(inputs=[z[:batch], np.full((batch,) + labels.shape[1:], np.unique(labels)[Ekin])])
                 times.append(time.time() - start)
             print('batch', batch, 'Ekin', Ekin, 'averaged_over', ntrials, 'mean', np.mean(times)*1000, 'std', np.std(times)*1000, 'ms', times)
             return
-        x_fake = self.G(inputs=[z, tf.convert_to_tensor(labels)])
+        if self.toggleConditionEtaPhi:
+            x_fake = self.G(inputs=[z, tf.convert_to_tensor(labels), tf.convert_to_tensor(coordinates)])
+        else:
+            x_fake = self.G(inputs=[z, tf.convert_to_tensor(labels)])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
             x_fake = x_fake[:, :-self.nlayers]

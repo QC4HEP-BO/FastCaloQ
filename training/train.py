@@ -104,6 +104,10 @@ def main(args):
     energies = get_energies(input_file)
     kin, particle = get_kin(input_file)
     kin = filter_energy(particle, input_data['incident_energy'][:], args.split_energy_position, kin)
+    if args.center_eta_conditioning:
+        center_eta = input_data['center_eta'][:]
+    if args.phi_mod_conditioning:
+        phi_mod = input_data['phi_mod'][:]
     if args.label_scheme:
         label_scheme = args.label_scheme
     else:
@@ -113,6 +117,10 @@ def main(args):
         'electron': 'log_ratio',
         }[particle]
     label_kin = kin_to_label(kin, scheme=label_scheme)
+    if args.center_eta_conditioning:
+        label_kin = np.concatenate((label_kin, center_eta.reshape(-1,1)), axis=1)
+    if args.phi_mod_conditioning:
+        label_kin = np.concatenate((label_kin, phi_mod.reshape(-1,1)), axis=1)
 
     if 'showers' in input_data:
         showers = input_data['showers'][:]
@@ -241,14 +249,20 @@ def main(args):
             config_string += '__mergelayer'
     else:
         config_string = None
-    wgan = WGANGP(job_config=job_config, hp_config=hp_config, logger=__file__, config_string=config_string)
+    wgan = WGANGP(job_config=job_config, hp_config=hp_config, logger=__file__, config_string=config_string, toggleConditionEtaPhi=args.eta_phi_conditioning)
 
     if scale:
         with open(f'{wgan.train_folder}/scale_{args.preprocess}.json', 'w') as fp:
             json.dump(scale, fp, indent=2)
     plot_input(args, X_train, output=wgan.train_folder)
     print('\033[92m[INFO] Training size\033[0m', X_train.shape, 'kinematic and counts:', np.unique(kin,return_counts=True))
-    wgan.train(X_train, label_kin)
+    if args.eta_phi_conditioning:
+        coordinates = CalculateCoordinates(input_data=input_data, relevant_layers=args.relevant_layers)
+        coordinates = np.tile(coordinates, (X_train.shape[0], 1))
+        print("Also adding coordinates with shape", coordinates.shape)
+        wgan.train(X_train, label_kin, coordinates)
+    else:
+        wgan.train(X_train, label_kin)
 
 def plot_input(args, X_train, output):
     kin, particle = get_kin(args.input_file)
@@ -290,6 +304,9 @@ if __name__ == '__main__':
     parser.add_argument('--label_scheme', type=str, required=False, default='log_ratio', help='Label scheme defined in common.py (default: %(default)s)')
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Energy split training (default: %(default)s)')
     parser.add_argument('--max_iter', type=int, required=False, default=1E6, help='Number of iterations (default: %(default)s)')
+    parser.add_argument('--center_eta_conditioning', required=False, action='store_true', help='To be specified if conditioning is also done on center_eta (default: %(default)s)')
+    parser.add_argument('--phi_mod_conditioning', required=False, action='store_true', help='To be specified if conditioning is also done on phi_mod (default: %(default)s)')
+    parser.add_argument('--eta_phi_conditioning', required=False, action='store_true', help='To be specified if conditioning is also done on eta and phi (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)

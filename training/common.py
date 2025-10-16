@@ -318,3 +318,33 @@ def get_xrange_from_caloflow(particle, energy, normalise=False):
         return tuple([i for i in bin_map[particle][energy]])
     return tuple([i*energy/1000 for i in bin_map[particle][energy]])
 
+def CalculateCoordinates(input_data, relevant_layers):
+    coordinatesBuf = [[],[]]
+
+    for layer_index in relevant_layers:
+        # Read the binstart and binsize values for alpha and R and compute the corresponding midpoints                                                 
+        alpha_binstart = input_data[f"binstart_alpha_layer_{layer_index}"][:]
+        alpha_binsize = input_data[f"binsize_alpha_layer_{layer_index}"][:]
+        alpha_midpoint = alpha_binstart + alpha_binsize / 2
+
+        R_binstart = input_data[f"binstart_radius_layer_{layer_index}"][:]
+        R_binsize = input_data[f"binsize_radius_layer_{layer_index}"][:]
+        R_midpoint = R_binstart + R_binsize / 2
+
+        etaForConditioning = R_midpoint * np.cos(alpha_midpoint)
+        phiForConditioning = R_midpoint * np.sin(alpha_midpoint)
+        print("etaForConditioning.shape =", etaForConditioning.shape)
+        print("phiForConditioning.shape =", phiForConditioning.shape)
+
+        coordinatesBuf[0].append(etaForConditioning)
+        coordinatesBuf[1].append(phiForConditioning)
+
+    coordinatesBuf[0] = np.concatenate(coordinatesBuf[0])
+    coordinatesBuf[1] = np.concatenate(coordinatesBuf[1])
+    coordinatesBuf = np.stack(coordinatesBuf)
+    coordinates = np.concatenate([coordinatesBuf[0], coordinatesBuf[1]])
+    coordinates = coordinates.astype(np.float16)
+    print("coordinatesBuf.shape =", coordinatesBuf.shape)
+    print("coordinates.shape =", coordinates.shape)
+    print("coordinates =", coordinates)
+    return coordinates
