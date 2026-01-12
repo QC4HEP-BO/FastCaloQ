@@ -13,7 +13,7 @@ from itertools import repeat
 from glob import glob
 from common import *
 from data import *
-from evaluate_classifier import *
+#from evaluate_classifier import *
 import re
 from pdb import set_trace
 
@@ -31,6 +31,9 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
 
     X_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['showers'][:])
     Y_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['incident_energies'][:])
+    if args.quantum:
+        X_train = X_train[-230:]
+        Y_train = Y_train[-230:]
     if mode == 'total':
         hlf = HighLevelFeatures(particle, filename=binning_xml)
         hlf.CalculateFeatures(X_train)
@@ -53,10 +56,15 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
         vector /= Y_train
     kin = get_kin(input_file_name, label=True) # added in DS2
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
+    if args.quantum:
+        kin = kin[-230:]
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
-        categories, vector_list = split_energy(input_file['incident_energies'], vector)
+        if args.quantum:
+            categories, vector_list = split_energy(input_file['incident_energies'][-230:], vector)
+        else:
+            categories, vector_list = split_energy(input_file['incident_energies'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
         categories, vector_list = split_energy(kin, vector)
     else:
@@ -88,7 +96,11 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             config_string += '__mergelayer'
     else:
         config_string = None
-    wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
+    wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, enableQuantum=args.quantum)
+    if args.quantum:
+        print("ONLY USING 500 EVENTS!")
+        label_kin = label_kin[-230:]
+        print("New label_kin shape", label_kin.shape)
     E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming)
     if istiming:
         return
@@ -104,6 +116,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             xml = XMLHandler(particle, filename=f'{os.path.dirname(input_file_name)}/binning_dataset_1_{particle}s.xml')
             E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=None, xml=xml)
     else:
+        if args.quantum:
+            kin = kin[-230:]
         E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True)
 
     if 'dataset1' in input_file_name:
@@ -142,7 +156,10 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
-        categories, vector_list = split_energy(input_file['incident_energies'], vector)
+        if args.quantum:
+            categories, vector_list = split_energy(input_file['incident_energies'][-230:], vector)
+        else:
+            categories, vector_list = split_energy(input_file['incident_energies'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
         categories, vector_list = split_energy(kin, vector)
     else:
@@ -446,7 +463,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
                     config_string += '__mergelayer'
             else:
                 config_string = None
-            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
+            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, enableQuantum=args.quantum)
             wgan.convert_model(int(best_x/1000))
 
 def gen_h5(energies, showers, output):
@@ -580,5 +597,6 @@ if __name__ == '__main__':
     parser.add_argument('--save_h5', required=False, action='store_true', help='Save H5 https://calochallenge.github.io/homepage/ (default: %(default)s)')
     parser.add_argument('--istiming', required=False, nargs='+', default=False, help='Measure timing: a tuple of three: batch, Ekin, trials (default: %(default)s)')
     parser.add_argument('--convert', required=False, action='store_true', help='Convert best model to lwtnn (default: %(default)s)')
+    parser.add_argument('--quantum', required=False, action='store_true', help='To be specified when using quantum models (default: %(default)s)')
     args = parser.parse_args()
     main(args)

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import random
 
 import tensorflow as tf
+tf.config.run_functions_eagerly(True)
 from tensorflow.keras import layers
 from tensorflow.keras import activations
 from tensorflow.keras.models import Model
@@ -18,9 +19,32 @@ from tensorflow.keras.layers import Layer
 
 from pdb import set_trace
 
+import tensorflow_quantum as tfq
+import cirq
+import sympy
+
+def encodeSingleInputIntoQuantumCircuit(singleInputToEncode, qubitsForEncoding, evaluate=False):
+    singleInputCircuit = cirq.Circuit()
+    for i in range(len(singleInputToEncode)):
+        if evaluate:
+            singleInputToEncodeAdapted = singleInputToEncode[i]
+        else:
+            singleInputToEncodeAdapted = singleInputToEncode[i].numpy().item()
+        singleInputCircuit.append(cirq.rx(singleInputToEncodeAdapted)(qubitsForEncoding[i]))
+    return singleInputCircuit
+
+def encodeIntoQuantumCircuit(inputToEncode, numberOfQubits, evaluate=False):
+    #numberOfQubits = 5
+    batchSize = 10
+    angleEncodingQubits = [cirq.GridQubit(0, i) for i in range(numberOfQubits)]
+    if evaluate:
+        batchCircuits = [encodeSingleInputIntoQuantumCircuit(inputToEncode[i], angleEncodingQubits, evaluate=evaluate) for i in range(inputToEncode.shape[0])]
+    else:
+        batchCircuits = [encodeSingleInputIntoQuantumCircuit(inputToEncode[i], angleEncodingQubits) for i in range(batchSize)]
+    return tfq.convert_to_tensor(batchCircuits)
 
 class WGANGP:
-    def __init__(self, job_config, hp_config, logger, config_string=None):
+    def __init__(self, job_config, hp_config, logger, config_string=None, enableQuantum=False):
         tf.keras.backend.set_floatx("float32")
         self.loading = job_config.get('loading', None)
         if config_string:
@@ -45,7 +69,8 @@ class WGANGP:
         self.generatorLayers = hp_config.get('generatorLayers', [50, 100, 200])
         for i in range(len(self.generatorLayers)):
             self.generatorLayers[i] = int(self.generatorLayers[i] * self.G_size)
-        self.latent_dim = int(self.latent_dim * self.G_size)
+        if not enableQuantum:
+            self.latent_dim = int(self.latent_dim * self.G_size)
         self.nvoxels = hp_config.get('nvoxels', 368)
         self.discriminatorLayers = hp_config.get('discriminatorLayers', [self.nvoxels, self.nvoxels, self.nvoxels])
         self.use_bias = hp_config.get('use_bias', True)
@@ -81,6 +106,8 @@ class WGANGP:
                 random.seed(22)
                 np.random.seed(22)
                 tf.random.set_seed(22)
+
+        self.enableQuantum = enableQuantum
 
         # Construct D and G models
         self.G = self.make_generator_functional_model()
@@ -131,8 +158,12 @@ class WGANGP:
             logging.info('configuration %s, %s', json.dumps(job_config), json.dumps(hp_config))
 
     def make_generator_functional_model(self):
-        noise = layers.Input(shape=(self.latent_dim,), name="Noise")
-        condition = layers.Input(shape=(self.conditional_dim,), name="mycond")
+        if self.enableQuantum:
+            noise = layers.Input(shape=(), dtype=tf.string, name="Noise")
+            condition = layers.Input(shape=(), dtype=tf.string, name="mycond")
+        else:
+            noise = layers.Input(shape=(self.latent_dim,), name="Noise")
+            condition = layers.Input(shape=(self.conditional_dim,), name="mycond")
         con = layers.concatenate([noise, condition])
         if not self.no_output:
             logging.info('Use model %s', self.model)
@@ -148,7 +179,27 @@ class WGANGP:
             G = layers.ReLU()(G)
             G = layers.Dense(self.nvoxels, kernel_initializer=tf.keras.initializers.glorot_normal(), bias_initializer="zeros")(G)
             G = layers.ReLU()(G)
-        elif self.model == "BNReLU":
+        elif self.model == "BNReLU" or self.model == "BNReLUQuantum":
+            if (self.model == "BNReLU" and self.enableQuantum) or (self.model == "BNReLUQuantum" and not self.enableQuantum):
+                raise RuntimeError("Conflicting invocations of BNReLU or BNReLUQuantum, and the quantum flag")
+            elif self.model == "BNReLUQuantum" and self.enableQuantum:
+                # Quantum layer
+                numberOfQubits = self.latent_dim + self.conditional_dim
+                print("self.latent_dim", self.latent_dim)
+                print("self.conditional_dim", self.conditional_dim)
+                print("numberOfQubits", numberOfQubits)
+                qubits = [cirq.GridQubit(0, i) for i in range(numberOfQubits)]
+                symbols = sympy.symbols(f'theta0:{numberOfQubits}')
+                circuit = cirq.Circuit()
+                for i, q in enumerate(qubits):
+                    circuit.append(cirq.ry(symbols[i])(q))
+                for i in range(numberOfQubits - 1):
+                    circuit.append(cirq.CNOT(qubits[i], qubits[i+1]))
+                print("circuit")
+                print(circuit)
+                readoutOperators = [cirq.Z(q) for q in qubits]
+                con = tfq.layers.PQC(circuit, readoutOperators, differentiator=tfq.differentiators.Adjoint())(con)
+                #After the layer above it plugs directly into the classical network
             G = layers.Dense(self.generatorLayers[0], kernel_initializer=initializer, bias_initializer="zeros")(con)
             G = layers.BatchNormalization()(G)
             G = layers.ReLU()(G)
@@ -458,8 +509,15 @@ class WGANGP:
             logging.info('latent dist uniform -1, 1')
         else:
             z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
-            logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
-        x_fake = self.G(inputs=[z, cond_label])
+            if not self.enableQuantum:
+                logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
+        if self.enableQuantum:
+            zQuantum = encodeIntoQuantumCircuit(z, self.latent_dim)
+            cond_labelQuantum = encodeIntoQuantumCircuit(cond_label, self.conditional_dim)
+            x_fake = self.G(inputs=[zQuantum, cond_labelQuantum])
+            x_fake = x_fake[:self.batchsize,:] # REMOVE THIS!!!
+        else:
+            x_fake = self.G(inputs=[z, cond_label])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
 
@@ -616,11 +674,20 @@ class WGANGP:
             times = []
             for i in range(ntrials):
                 start = time.time()
+                if self.enableQuantum:
+                    raise NotImplementedError
                 x_fake = self.G(inputs=[z[:batch], np.full((batch,) + labels.shape[1:], np.unique(labels)[Ekin])])
                 times.append(time.time() - start)
             print('batch', batch, 'Ekin', Ekin, 'averaged_over', ntrials, 'mean', np.mean(times)*1000, 'std', np.std(times)*1000, 'ms', times)
             return
-        x_fake = self.G(inputs=[z, labels])
+        if self.enableQuantum:
+            zQuantum = encodeIntoQuantumCircuit(z, self.latent_dim)
+            labelsQuantum = encodeIntoQuantumCircuit(labels, self.conditional_dim, evaluate=True)
+            print("Encoded input (called from within function predict)")
+            x_fake = self.G(inputs=[zQuantum, labelsQuantum])
+            x_fake = x_fake[:labels.shape[0],:] # REMOVE THIS!!!
+        else:
+            x_fake = self.G(inputs=[z, labels])
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
             x_fake = x_fake[:, :-self.nlayers]
