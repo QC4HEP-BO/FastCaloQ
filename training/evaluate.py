@@ -32,8 +32,8 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
     X_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['showers'][:])
     Y_train = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, input_file['incident_energies'][:])
     if args.quantum:
-        X_train = X_train[-230:]
-        Y_train = Y_train[-230:]
+        X_train = X_train[81000:82000]
+        Y_train = Y_train[81000:82000]
     if mode == 'total':
         hlf = HighLevelFeatures(particle, filename=binning_xml)
         hlf.CalculateFeatures(X_train)
@@ -57,12 +57,12 @@ def get_E_truth(input_file_name, mode='total', return_E_vox=False, normalise=Fal
     kin = get_kin(input_file_name, label=True) # added in DS2
     kin = filter_energy(particle, input_file['incident_energies'][:], args.split_energy_position, kin)
     if args.quantum:
-        kin = kin[-230:]
+        kin = kin[81000:82000]
     if 'dataset2' in input_file_name:
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
         if args.quantum:
-            categories, vector_list = split_energy(input_file['incident_energies'][-230:], vector)
+            categories, vector_list = split_energy(input_file['incident_energies'][81000:82000], vector)
         else:
             categories, vector_list = split_energy(input_file['incident_energies'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
@@ -99,9 +99,10 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
     wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, enableQuantum=args.quantum)
     if args.quantum:
         print("ONLY USING 500 EVENTS!")
-        label_kin = label_kin[-230:]
+        label_kin = label_kin[81000:82000]
         print("New label_kin shape", label_kin.shape)
     E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming)
+    print("E_vox shape", E_vox.shape)
     if istiming:
         return
     if preprocess is not None:
@@ -117,7 +118,7 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True, input_file=None, xml=xml)
     else:
         if args.quantum:
-            kin = kin[-230:]
+            kin = kin[81000:82000]
         E_vox = preprocessing(E_vox, kin, name=preprocess, reverse=True)
 
     if 'dataset1' in input_file_name:
@@ -157,7 +158,7 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
         categories, vector_list = split_energy(kin, vector)
     elif 'dataset1' in input_file_name and 'pion' in particle:
         if args.quantum:
-            categories, vector_list = split_energy(input_file['incident_energies'][-230:], vector)
+            categories, vector_list = split_energy(input_file['incident_energies'][81000:82000], vector)
         else:
             categories, vector_list = split_energy(input_file['incident_energies'], vector)
     elif 'dataset1' in input_file_name and 'photon' in particle:
