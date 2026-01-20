@@ -231,11 +231,6 @@ def main(args):
     if scale:
         with open(f'{wgan.train_folder}/scale_{args.preprocess}.json', 'w') as fp:
             json.dump(scale, fp, indent=2)
-    if args.quantum:
-        print("ONLY USING 500 EVENTS!")
-        X_train = X_train[81000:82000,:]
-        label_kin = label_kin[81000:82000]
-        print("X_train new shape", X_train.shape)
     plot_input(args, X_train, output=wgan.train_folder)
     print('\033[92m[INFO] Training size\033[0m', X_train.shape, 'kinematic and counts:', np.unique(kin,return_counts=True))
     wgan.train(X_train, label_kin)
@@ -244,8 +239,6 @@ def plot_input(args, X_train, output):
     kin, particle = get_kin(args.input_file)
     input_data = h5py.File(f'{args.input_file}', 'r')
     kin = filter_energy(particle, input_data['incident_energies'][:], args.split_energy_position, kin)
-    if args.quantum:
-        kin = kin[81000:82000]
     categories, xtrain_list = split_energy(kin, X_train)
     out_file = os.path.join(output, f'input_{particle}_{args.preprocess}.pdf')
     plot_energy_vox(categories, [xtrain_list], label_list=['Input'], nvox='all', logx=False, \

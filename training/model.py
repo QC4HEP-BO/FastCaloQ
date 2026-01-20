@@ -33,16 +33,16 @@ def encodeSingleInputIntoQuantumCircuit(singleInputToEncode, qubitsForEncoding, 
         singleInputCircuit.append(cirq.rx(singleInputToEncodeAdapted)(qubitsForEncoding[i]))
     return singleInputCircuit
 
-def encodeIntoQuantumCircuit(inputToEncode, numberOfQubits, evaluateOption=None):
-    #numberOfQubits = 5
-    batchSize = 10
+def encodeIntoQuantumCircuit(inputToEncode, numberOfQubits, inputBatchSize=None, evaluateOption=None):
     angleEncodingQubits = [cirq.GridQubit(0, i) for i in range(numberOfQubits)]
     if evaluateOption == "z":
         batchCircuits = [encodeSingleInputIntoQuantumCircuit(inputToEncode[i], angleEncodingQubits) for i in range(inputToEncode.shape[0])]
     elif evaluateOption == "labels":
         batchCircuits = [encodeSingleInputIntoQuantumCircuit(inputToEncode[i], angleEncodingQubits, evaluateLabels=True) for i in range(inputToEncode.shape[0])]
     elif evaluateOption is None:
-        batchCircuits = [encodeSingleInputIntoQuantumCircuit(inputToEncode[i], angleEncodingQubits) for i in range(batchSize)]
+        if inputBatchSize is None:
+            raise RuntimeError("Invalid batch size")
+        batchCircuits = [encodeSingleInputIntoQuantumCircuit(inputToEncode[i], angleEncodingQubits) for i in range(inputBatchSize)]
     else:
         raise NotImplementedError("Invalid evaluateOption")
     return tfq.convert_to_tensor(batchCircuits)
@@ -80,6 +80,9 @@ class WGANGP:
         self.use_bias = hp_config.get('use_bias', True)
         self.random_mean= hp_config.get('latent_mean', 0.5)
         self.random_std = hp_config.get('latent_std', 0.5)
+        if enableQuantum:
+            self.Rz = hp_config.get('Rz', False)
+            self.twoCNOT = hp_config.get('2CNOT', False)
 
         self.particle = job_config.get('particle', 'photons')
         self.eta_slice = job_config.get('eta_slice', '20_25')
@@ -164,12 +167,13 @@ class WGANGP:
     def make_generator_functional_model(self):
         if self.enableQuantum:
             noise = layers.Input(shape=(), dtype=tf.string, name="Noise")
-            condition = layers.Input(shape=(), dtype=tf.string, name="mycond")
+            if self.conditional_dim != 0:
+                condition = layers.Input(shape=(), dtype=tf.string, name="mycond")
         else:
             noise = layers.Input(shape=(self.latent_dim,), name="Noise")
-            condition = layers.Input(shape=(self.conditional_dim,), name="mycond")
-        if self.model != "BNReLUFullQuantumSingleEnergy" and self.model != "BNReLUQuantumSingleEnergy":
-            # The models mentioned in the line above don't use conditioning. Layer "condition" is still kept only for ease of implementation, to not collide with other parts of the code.
+            if self.conditional_dim != 0:
+                condition = layers.Input(shape=(self.conditional_dim,), name="mycond")
+        if self.conditional_dim != 0:
             con = layers.concatenate([noise, condition])
         if not self.no_output:
             logging.info('Use model %s', self.model)
@@ -185,45 +189,48 @@ class WGANGP:
             G = layers.ReLU()(G)
             G = layers.Dense(self.nvoxels, kernel_initializer=tf.keras.initializers.glorot_normal(), bias_initializer="zeros")(G)
             G = layers.ReLU()(G)
-        elif self.model == "BNReLU" or self.model == "BNReLUQuantum" or self.model == "BNReLUFullQuantumSingleEnergy" or self.model == "BNReLUQuantumSingleEnergy":
-            if (self.model == "BNReLU" and self.enableQuantum) or (self.model != "BNReLU" and not self.enableQuantum):
+        elif self.model == "BNReLU" or self.model == "BNReLUQuantum":
+            if (self.model == "BNReLU" and self.enableQuantum) or (self.model == "BNReLUQuantum" and not self.enableQuantum):
                 raise RuntimeError("Conflicting invocations of the model and the quantum flag")
-            elif self.model != "BNReLU" and self.enableQuantum:
+            elif self.model == "BNReLUQuantum" and self.enableQuantum:
                 # Quantum layer
-                if self.model == "BNReLUFullQuantumSingleEnergy" or self.model == "BNReLUQuantumSingleEnergy":
-                    numberOfQubits = self.latent_dim
-                else:
-                    numberOfQubits = self.latent_dim + self.conditional_dim
-                print("self.latent_dim", self.latent_dim)
-                print("self.conditional_dim", self.conditional_dim)
-                print("numberOfQubits", numberOfQubits)
+                numberOfQubits = self.latent_dim + self.conditional_dim
+                print("self.latent_dim", self.latent_dim, "self.conditional_dim", self.conditional_dim, "numberOfQubits", numberOfQubits)
                 qubits = [cirq.GridQubit(0, i) for i in range(numberOfQubits)]
                 symbols = sympy.symbols(f'theta0:{numberOfQubits}')
+                if self.Rz:
+                    symbolsRz = sympy.symbols(f'phi0:{numberOfQubits}')
                 circuit = cirq.Circuit()
                 for i, q in enumerate(qubits):
                     circuit.append(cirq.ry(symbols[i])(q))
+                    if self.Rz:
+                        circuit.append(cirq.rz(symbolsRz[i])(q))
                 for i in range(numberOfQubits - 1):
                     circuit.append(cirq.CNOT(qubits[i], qubits[i+1]))
+                    if self.twoCNOT and i != (numberOfQubits - 2):
+                        circuit.append(cirq.CNOT(qubits[i], qubits[i+2]))
                 print("circuit")
                 print(circuit)
                 readoutOperators = [cirq.Z(q) for q in qubits]
-                if self.model == "BNReLUFullQuantumSingleEnergy":
-                    G = tfq.layers.PQC(circuit, readoutOperators, differentiator=tfq.differentiators.Adjoint())(noise)
-                elif self.model == "BNReLUQuantumSingleEnergy":
-                    con = tfq.layers.PQC(circuit, readoutOperators, differentiator=tfq.differentiators.Adjoint())(noise)
-                else:
-                    con = tfq.layers.PQC(circuit, readoutOperators, differentiator=tfq.differentiators.Adjoint())(con)
-            if self.model != "BNReLUFullQuantumSingleEnergy":
+                G = tfq.layers.PQC(circuit, readoutOperators, differentiator=tfq.differentiators.Adjoint())(noise if self.conditional_dim == 0 else con)
+            if self.generatorLayers[0] == 0 and self.model == "BNReLU":
+                raise RuntimeError("This configuration creates no Dense layer")
+            if self.generatorLayers[0] != 0:
                 # After the quantum part it plugs directly into the classical network if it's not a fully quantum model. Otherwise it only uses a single Dense layer for the output to be of size nvoxels.
-                G = layers.Dense(self.generatorLayers[0], kernel_initializer=initializer, bias_initializer="zeros")(con)
+                if self.model == "BNReLU":
+                    G = layers.Dense(self.generatorLayers[0], kernel_initializer=initializer, bias_initializer="zeros")(noise if self.conditional_dim == 0 else con)
+                else:
+                    G = layers.Dense(self.generatorLayers[0], kernel_initializer=initializer, bias_initializer="zeros")(G)
                 G = layers.BatchNormalization()(G)
                 G = layers.ReLU()(G)
-                G = layers.Dense(self.generatorLayers[1], kernel_initializer=initializer, bias_initializer="zeros")(G)
-                G = layers.BatchNormalization()(G)
-                G = layers.ReLU()(G)
-                G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
-                G = layers.BatchNormalization()(G)
-                G = layers.ReLU()(G)
+                if self.generatorLayers[1] != 0:
+                    G = layers.Dense(self.generatorLayers[1], kernel_initializer=initializer, bias_initializer="zeros")(G)
+                    G = layers.BatchNormalization()(G)
+                    G = layers.ReLU()(G)
+                    if self.generatorLayers[2] != 0:
+                        G = layers.Dense(self.generatorLayers[2],use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+                        G = layers.BatchNormalization()(G)
+                        G = layers.ReLU()(G)
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
             G = layers.ReLU()(G)
         elif self.model == "BNswish":
@@ -391,7 +398,7 @@ class WGANGP:
             print(self.model, 'not implemented')
             raise NotImplementedError
 
-        generator = Model(inputs=[noise, condition], outputs=G)
+        generator = Model(inputs=[noise, condition] if self.conditional_dim != 0 else noise, outputs=G)
         if not self.no_output:
             generator.summary()
             with open(os.path.join(self.train_folder, 'model.txt'), 'w') as fp:
@@ -426,9 +433,14 @@ class WGANGP:
                                     input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros"))
                 )
         elif self.dmodel == 'dense':
-            model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node,
-                                    input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros")
-                    )
+            if self.conditional_dim==0: # some parts of the code still need a conditioning array (even if not used in training). To be removed in a future version
+                model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node,
+                                       input_shape=(self.nvoxels + 1,), kernel_initializer=initializer,bias_initializer="zeros")
+                          )
+            else:
+                model.add(layers.Dense(int(self.discriminatorLayers[0] * self.D_size), use_bias=bias_node,
+                                       input_shape=(self.nvoxels + self.conditional_dim,), kernel_initializer=initializer,bias_initializer="zeros")
+                          )
             model.add(layers.ReLU())
             model.add(layers.Dense(int(self.discriminatorLayers[1] * self.D_size), use_bias=bias_node,
                                     input_shape=(int(self.discriminatorLayers[0] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
@@ -524,15 +536,16 @@ class WGANGP:
             logging.info('latent dist uniform -1, 1')
         else:
             z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
-            if not self.enableQuantum:
+            if not self.enableQuantum and self.conditional_dim != 0:
                 logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
         if self.enableQuantum:
-            zQuantum = encodeIntoQuantumCircuit(z, self.latent_dim)
-            cond_labelQuantum = encodeIntoQuantumCircuit(cond_label, self.conditional_dim)
-            x_fake = self.G(inputs=[zQuantum, cond_labelQuantum])
+            zQuantum = encodeIntoQuantumCircuit(z, self.latent_dim, inputBatchSize=self.batchsize)
+            if self.conditional_dim != 0:
+                cond_labelQuantum = encodeIntoQuantumCircuit(cond_label, self.conditional_dim, inputBatchSize=self.batchsize)
+            x_fake = self.G(inputs=[zQuantum, cond_labelQuantum] if self.conditional_dim != 0 else zQuantum)
             x_fake = x_fake[:self.batchsize,:] # REMOVE THIS!!!
         else:
-            x_fake = self.G(inputs=[z, cond_label])
+            x_fake = self.G(inputs=[z, cond_label] if self.conditional_dim != 0 else z)
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
 
@@ -699,15 +712,17 @@ class WGANGP:
             return
         if self.enableQuantum:
             zQuantum = encodeIntoQuantumCircuit(z, self.latent_dim, evaluateOption="z")
-            labelsQuantum = encodeIntoQuantumCircuit(labels, self.conditional_dim, evaluateOption="labels")
+            if self.conditional_dim != 0:
+                labelsQuantum = encodeIntoQuantumCircuit(labels, self.conditional_dim, evaluateOption="labels")
             print("zQuantum shape", zQuantum.shape)
-            print("labelsQuantum shape", labelsQuantum.shape)
+            if self.conditional_dim != 0:
+                print("labelsQuantum shape", labelsQuantum.shape)
             print("Encoded input (called from within function predict)")
-            x_fake = self.G(inputs=[zQuantum, labelsQuantum])
+            x_fake = self.G(inputs=[zQuantum, labelsQuantum] if self.conditional_dim != 0 else zQuantum)
             x_fake = x_fake[:labels.shape[0],:] # REMOVE THIS!!!
             print("x_fake shape", x_fake.shape)
         else:
-            x_fake = self.G(inputs=[z, labels])
+            x_fake = self.G(inputs=[z, labels] if self.conditional_dim != 0 else z)
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
             x_fake = x_fake[:, :-self.nlayers]
