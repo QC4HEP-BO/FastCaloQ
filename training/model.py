@@ -543,7 +543,6 @@ class WGANGP:
             if self.conditional_dim != 0:
                 cond_labelQuantum = encodeIntoQuantumCircuit(cond_label, self.conditional_dim, inputBatchSize=self.batchsize)
             x_fake = self.G(inputs=[zQuantum, cond_labelQuantum] if self.conditional_dim != 0 else zQuantum)
-            x_fake = x_fake[:self.batchsize,:] # REMOVE THIS!!!
         else:
             x_fake = self.G(inputs=[z, cond_label] if self.conditional_dim != 0 else z)
         if self.special_config == 'normlayer1':
@@ -719,7 +718,6 @@ class WGANGP:
                 print("labelsQuantum shape", labelsQuantum.shape)
             print("Encoded input (called from within function predict)")
             x_fake = self.G(inputs=[zQuantum, labelsQuantum] if self.conditional_dim != 0 else zQuantum)
-            x_fake = x_fake[:labels.shape[0],:] # REMOVE THIS!!!
             print("x_fake shape", x_fake.shape)
         else:
             x_fake = self.G(inputs=[z, labels] if self.conditional_dim != 0 else z)
