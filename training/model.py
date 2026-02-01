@@ -83,6 +83,8 @@ class WGANGP:
         if enableQuantum:
             self.Rz = hp_config.get('Rz', False)
             self.twoCNOT = hp_config.get('2CNOT', False)
+            self.threeCNOT = hp_config.get('3CNOT', False)
+            self.fourCNOT = hp_config.get('4CNOT', False)
 
         self.particle = job_config.get('particle', 'photons')
         self.eta_slice = job_config.get('eta_slice', '20_25')
@@ -207,8 +209,12 @@ class WGANGP:
                         circuit.append(cirq.rz(symbolsRz[i])(q))
                 for i in range(numberOfQubits - 1):
                     circuit.append(cirq.CNOT(qubits[i], qubits[i+1]))
-                    if self.twoCNOT and i != (numberOfQubits - 2):
+                    if self.twoCNOT and i < (numberOfQubits - 2):
                         circuit.append(cirq.CNOT(qubits[i], qubits[i+2]))
+                    if self.threeCNOT and i < (numberOfQubits - 3):
+                        circuit.append(cirq.CNOT(qubits[i], qubits[i+3]))
+                    if self.fourCNOT and i < (numberOfQubits - 4):
+                        circuit.append(cirq.CNOT(qubits[i], qubits[i+4]))
                 print("circuit")
                 print(circuit)
                 readoutOperators = [cirq.Z(q) for q in qubits]
