@@ -23,6 +23,8 @@ import tensorflow_quantum as tfq
 import cirq
 import sympy
 
+from qinn_bridge import TorchQINNLayer
+
 def encodeSingleInputIntoQuantumCircuit(singleInputToEncode, qubitsForEncoding, evaluateLabels=False):
     singleInputCircuit = cirq.Circuit()
     for i in range(len(singleInputToEncode)):
@@ -50,6 +52,7 @@ def encodeIntoQuantumCircuit(inputToEncode, numberOfQubits, inputBatchSize=None,
 class WGANGP:
     def __init__(self, job_config, hp_config, logger, config_string=None, enableQuantum=False):
         tf.keras.backend.set_floatx("float32")
+        self.hp_config = hp_config
         self.loading = job_config.get('loading', None)
         if config_string:
             self.set_special_config(config_string)
@@ -238,6 +241,33 @@ class WGANGP:
                         G = layers.BatchNormalization()(G)
                         G = layers.ReLU()(G)
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.ReLU()(G)
+        elif self.model == "BNReLUqINN":
+            qinn_input = noise if self.conditional_dim == 0 else con
+            qinn_output_dim = int(self.latent_dim + self.conditional_dim)
+            qinn_output_dim = int(self.generatorLayers[0]) if self.generatorLayers[0] != 0 else qinn_output_dim
+
+            qinn_layer = TorchQINNLayer(
+                module_path=self.hp_config.get("qinn_module_path", "qinn_module"),
+                module_class=self.hp_config.get("qinn_module_class", "QINNModule"),
+                module_kwargs_json=json.dumps(self.hp_config.get("qinn_module_kwargs", {})),
+                output_dim=self.hp_config.get("qinn_output_dim", qinn_output_dim),
+                torch_device=self.hp_config.get("qinn_torch_device", "cpu"),
+                name="qinn_bridge",
+            )
+            G = qinn_layer(qinn_input)
+
+            if self.generatorLayers[1] != 0:
+                G = layers.Dense(self.generatorLayers[1], kernel_initializer=initializer, bias_initializer="zeros")(G)
+                G = layers.BatchNormalization()(G)
+                G = layers.ReLU()(G)
+
+            if self.generatorLayers[2] != 0:
+                G = layers.Dense(self.generatorLayers[2], use_bias=bias_node, kernel_initializer=initializer, bias_initializer="zeros")(G)
+                G = layers.BatchNormalization()(G)
+                G = layers.ReLU()(G)
+
+            G = layers.Dense(self.nvoxels, use_bias=bias_node, kernel_initializer=initializer, bias_initializer="zeros")(G)
             G = layers.ReLU()(G)
         elif self.model == "BNswish":
             initializer = tf.keras.initializers.glorot_normal()
