@@ -33,38 +33,61 @@ python evaluate.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -t ../output/data
 
 Da questo branch e' disponibile il modello `BNReLUqINN` nel generatore FastCaloQ.
 
-### 1) Scegliere il modello nel file di configurazione
+### 1) Mappatura firma input/output (plug-and-play)
 
-Imposta in `hp_config`:
+Per essere compatibile con `train.py` / `evaluate.py`, il modulo qINN deve rispettare:
+
+- input: `[batch, latent_dim + conditional_dim]`
+- output: `[batch, qinn_output_dim]`
+
+Nel file `config/config_qinn_example.json`:
+
+- `qinn_module_kwargs.in_features` deve coincidere con `latent_dim + conditional_dim`
+- `qinn_module_kwargs.out_features` deve coincidere con `qinn_output_dim`
+
+### 2) Configurazione base
 
 ```json
 {
   "model": "BNReLUqINN",
   "latent_dim": 10,
   "conditional_dim": 0,
-  "generatorLayers": [100, 0, 0],
+  "generatorLayers": [100, 64, 0],
   "qinn_module_path": "qinn_module",
   "qinn_module_class": "QINNModule",
   "qinn_module_kwargs": {
     "in_features": 10,
     "out_features": 100,
     "hidden_features": 64,
-    "use_pennylane": false
+    "use_pennylane": true,
+    "n_qubits": 6,
+    "n_q_layers": 2,
+    "q_device": "default.qubit",
+    "q_diff_method": "best",
+    "q_shots": null,
+    "q_entanglement": "linear"
   },
   "qinn_output_dim": 100,
   "qinn_torch_device": "cpu"
 }
 ```
 
-### 2) Modulo qINN
+### 3) Modulo qINN reale
 
-Il bridge carica dinamicamente una classe PyTorch (`qinn_module.QINNModule`) e la invoca dentro al grafo Keras.
-Il file `training/qinn_module.py` e' un esempio minimo, da sostituire con il modulo qINN finale.
+`training/qinn_module.py` ora include un modulo ibrido:
 
-### 3) Limitazioni attuali
+- `use_pennylane=false`: percorso MLP classico (debug veloce)
+- `use_pennylane=true`: percorso quantum con `qml.qnn.TorchLayer`
 
-- Il forward qINN viene eseguito tramite `tf.py_function`.
-- Il gradiente usato verso l'input e' uno *straight-through estimator* (identita').
-- I pesi interni del modulo torch non vengono aggiornati da Keras.
+Cosi' puoi fare debug in modo incrementale e passare al blocco quantistico senza cambiare il bridge.
 
-Questa modalita' e' utile come primo step di integrazione per esecuzione/validazione.
+### 4) Nota importante su training
+
+L'integrazione avviene via bridge TensorFlow->PyTorch (`tf.py_function`):
+
+- il training Keras resta eseguibile
+- il gradiente verso input del blocco qINN usa ST estimator
+- i pesi interni del modulo torch non sono aggiornati direttamente da Keras
+
+Questa modalita' e' adatta a integrazione/esecuzione e validazione iniziale.
+
