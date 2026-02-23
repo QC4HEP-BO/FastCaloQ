@@ -226,7 +226,7 @@ def main(args):
             config_string += '__mergelayer'
     else:
         config_string = None
-    wgan = WGANGP(job_config=job_config, hp_config=hp_config, logger=__file__, config_string=config_string, enableQuantum=args.quantum)
+    wgan = WGANGP(job_config=job_config, hp_config=hp_config, logger=__file__, config_string=config_string)
 
     if scale:
         with open(f'{wgan.train_folder}/scale_{args.preprocess}.json', 'w') as fp:
@@ -261,7 +261,6 @@ if __name__ == '__main__':
     parser.add_argument('--label_scheme', type=str, required=False, default='log_ratio', help='Label scheme defined in common.py (default: %(default)s)')
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Energy split training (default: %(default)s)')
     parser.add_argument('--max_iter', type=int, required=False, default=1E6, help='Number of iterations (default: %(default)s)')
-    parser.add_argument('--quantum', required=False, action='store_true', help='To be specified when using quantum models (default: %(default)s)')
 
     args = parser.parse_args()
     main(args)
