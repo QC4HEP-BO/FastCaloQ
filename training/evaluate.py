@@ -13,7 +13,7 @@ from itertools import repeat
 from glob import glob
 from common import *
 from data import *
-#from evaluate_classifier import *
+from evaluate_classifier import *
 import re
 from pdb import set_trace
 
@@ -88,9 +88,8 @@ def get_E_gan(model_i, input_file_name, train_path, eta_slice, mode='total', pre
             config_string += '__mergelayer'
     else:
         config_string = None
-    wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, enableQuantum=args.quantum)
+    wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
     E_vox = wgan.predict(model_i=model_i, labels=label_kin, istiming=istiming)
-    print("E_vox shape", E_vox.shape)
     if istiming:
         return
     if preprocess is not None:
@@ -447,7 +446,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
                     config_string += '__mergelayer'
             else:
                 config_string = None
-            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string, enableQuantum=args.quantum)
+            wgan = WGANGP(job_config=config['job_config'], hp_config=config['hp_config'], logger=__file__, config_string=config_string)
             wgan.convert_model(int(best_x/1000))
 
 def gen_h5(energies, showers, output):
@@ -581,6 +580,5 @@ if __name__ == '__main__':
     parser.add_argument('--save_h5', required=False, action='store_true', help='Save H5 https://calochallenge.github.io/homepage/ (default: %(default)s)')
     parser.add_argument('--istiming', required=False, nargs='+', default=False, help='Measure timing: a tuple of three: batch, Ekin, trials (default: %(default)s)')
     parser.add_argument('--convert', required=False, action='store_true', help='Convert best model to lwtnn (default: %(default)s)')
-    parser.add_argument('--quantum', required=False, action='store_true', help='To be specified when using quantum models (default: %(default)s)')
     args = parser.parse_args()
     main(args)

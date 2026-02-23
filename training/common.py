@@ -40,7 +40,7 @@ def kin_to_label(kin, scheme='log_ratio'):
     kin_min = np.min(kin)
     kin_max = np.max(kin)
     if scheme == 'log_ratio':
-        label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min) if kin_min != kin_max else np.zeros(kin.shape)
+        label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
     elif scheme == 'log_ratio_full_photon':
         kin_min, kin_max = 256, 4194304
         label = np.log10(kin / kin_min) / np.log10(kin_max / kin_min)
