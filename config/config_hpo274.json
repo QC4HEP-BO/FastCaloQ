@@ -1,0 +1,7 @@
+{
+    "G_size": 2,
+    "D_size": 1,
+    "lam": 20,
+    "latent_dim": 10,
+    "batchsize": 10
+}
