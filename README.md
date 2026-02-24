@@ -33,6 +33,41 @@ python evaluate.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -t ../output/data
 
 Da questo branch e' disponibile il modello `BNReLUqINN` nel generatore FastCaloQ.
 
+### Env setup -
+Only the first time 
+```
+setupATLAS
+lsetup "python 3.11.14-x86_64-el9"
+
+# venv creation
+python3.11 -m venv venv_QNN_fastcalo
+source venv_QNN_fastcalo/bin/activate
+
+# package install
+pip install --upgrade pip
+pip install tensorflow[and-cuda]==2.16.2
+pip install -U tensorflow-quantum
+pip install quickstats
+
+export TF_USE_LEGACY_KERAS=1
+```
+
+Every time 
+```
+setupATLAS
+lsetup "python 3.11.14-x86_64-el9"
+
+source venv_QNN_fastcalo/bin/activate
+
+export TF_USE_LEGACY_KERAS=1
+```
+
+Running test:
+```
+python train.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -m BNReLUqINN -o ../output/dataset1/test -c ../config/config_qinn_example.json --max_iter 100
+```
+
+
 ### 1) Mappatura firma input/output (plug-and-play)
 
 Per essere compatibile con `train.py` / `evaluate.py`, il modulo qINN deve rispettare:
