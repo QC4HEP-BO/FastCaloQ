@@ -213,12 +213,13 @@ def main(args):
     job_config = {
         'particle': particle+'s',
         'eta_slice': '20_25',
-        'checkpoint_interval': 1000 if not args.debug else 10,
+        'checkpoint_interval': 1,
         'output': args.output_path,
         'max_iter': 4E5 if args.loading else args.max_iter,
         'cache': False,
         'loading': args.loading,
     }
+    # 'checkpoint_interval': 1000 if not args.debug else 10,
 
     if args.preprocess in ['normlayer1', 'normlayer2', 'normlayer3', 'normlayerMichele', 'normlayerMichele2']:
         config_string = f'normlayer__{len(xml.GetRelevantLayers())}__{":".join([ str(x) for x in xml.bin_number if x > 0 ])}'

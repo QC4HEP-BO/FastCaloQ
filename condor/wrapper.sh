@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-cd /home/HPC/corchiahpc/ruiGAN/FastCaloChallengeQuantumOpenData/training
+cd /afs/cern.ch/user/m/matteo/eosSpace/FastCalo/FastCaloQ/training
+# cd /home/HPC/corchiahpc/ruiGAN/FastCaloChallengeQuantumOpenData/training
 #source /afs/cern.ch/work/z/zhangr/HH4b/hh4bStat/scripts/setup.sh
 
 echo $@
@@ -37,6 +38,7 @@ else
     version='v1'
     train_addition=""
 fi
+# version='debug'
 
 if [[ ! -z "$prep" ]]; then
     train_addition="$train_addition -p $prep"
@@ -64,9 +66,11 @@ fi
 
 if [[ ${task} == *'train'* ]]; then
     #command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition}"
-    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --max_iter 1000000 --quantum"
+    # command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --max_iter 1000000 --quantum"
+    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --debug --max_iter 1000"
 else
-    command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition} --debug --save_h5 --quantum"
+    # command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition} --debug --save_h5 --quantum"
+    command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition} --debug --save_h5"
 fi
 echo $command
 eval $command
