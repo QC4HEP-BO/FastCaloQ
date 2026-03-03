@@ -1,0 +1,314 @@
+"""qINN module aligned with QuantumINN block design.
+
+This module keeps backward compatibility with FastCaloQ bridge kwargs while
+implementing a QuantumINN architecture based on shared unitary blocks.
+"""
+
+import math
+from typing import List, Optional
+
+import torch
+import torch.nn as nn
+
+
+# ---------------------------
+# 1) Unitary template U(theta)
+# ---------------------------
+def _entangle_ring(wires: List[int]):
+    for i, w in enumerate(wires):
+        qml.CNOT(wires=[w, wires[(i + 1) % len(wires)]])
+
+
+def unitary_template(weights: torch.Tensor, wires: List[int]):
+    """Simple trainable ansatz with RZ/RY/RX + ring entanglement.
+
+    weights shape: [depth, n_qubits, 3]
+    """
+    depth, n_qubits, _ = weights.shape
+    if n_qubits != len(wires):
+        raise ValueError("weights qubit dimension does not match wires")
+
+    for l in range(depth):
+        for i, w in enumerate(wires):
+            phi_z, phi_y, phi_x = weights[l, i, 0], weights[l, i, 1], weights[l, i, 2]
+            qml.RZ(phi_z, w)
+            qml.RY(phi_y, w)
+            qml.RX(phi_x, w)
+        _entangle_ring(wires)
+
+
+# ---------------------------
+# 2) Quantum invertible block
+# ---------------------------
+class QuantumINNBlock(nn.Module):
+    """Quantum invertible block with shared weights for forward/inverse."""
+
+    def __init__(
+        self,
+        n_qubits: int,
+        depth: int = 2,
+        device_name: str = "default.qubit",
+        shots: Optional[int] = None,
+        wire_permutation: Optional[List[int]] = None,
+        interface: str = "torch",
+        diff_method: str = "auto",
+    ):
+        super().__init__()
+
+        if n_qubits <= 0:
+            raise ValueError("n_qubits must be > 0")
+        if depth <= 0:
+            raise ValueError("depth must be > 0")
+
+        self.n_qubits = n_qubits
+        self.depth = depth
+        self.wires = list(range(n_qubits))
+        self.perm = wire_permutation if wire_permutation is not None else list(range(n_qubits))
+
+        init_scale = 0.01
+        self.weights = nn.Parameter(init_scale * torch.randn(depth, n_qubits, 3))
+
+        self.dev = qml.device(device_name, wires=n_qubits, shots=shots)
+
+        def circuit_forward(x, weights):
+            x_perm = x[..., self.perm]
+            qml.AngleEmbedding(x_perm, wires=self.wires, rotation="Y")
+            unitary_template(weights, self.wires)
+            return [qml.expval(qml.PauliZ(w)) for w in self.wires]
+
+        def circuit_inverse(z, weights):
+            z_perm = z[..., self.perm]
+            qml.AngleEmbedding(z_perm, wires=self.wires, rotation="Y")
+            qml.adjoint(unitary_template)(weights, self.wires)
+            return [qml.expval(qml.PauliZ(w)) for w in self.wires]
+
+        self.qnode_fwd = qml.QNode(circuit_forward, self.dev, interface=interface, diff_method=diff_method)
+        self.qnode_inv = qml.QNode(circuit_inverse, self.dev, interface=interface, diff_method=diff_method)
+
+    def forward_block(self, x: torch.Tensor) -> torch.Tensor:
+        return self.qnode_fwd(x, self.weights)
+
+    def inverse_block(self, z: torch.Tensor) -> torch.Tensor:
+        return self.qnode_inv(z, self.weights)
+
+
+# ---------------------------
+# 3) Full QuantumINN model
+# ---------------------------
+class QuantumINN(nn.Module):
+    """Stack of quantum invertible blocks with wire permutations."""
+
+    def __init__(
+        self,
+        n_features_in: int,
+        n_features_out: Optional[int] = None,
+        n_qubits: Optional[int] = None,
+        n_blocks: int = 2,
+        depth_per_block: int = 2,
+        shots: Optional[int] = None,
+        device_name: str = "default.qubit",
+        nonneg_output: bool = True,
+        q_diff_method: str = "auto",
+    ):
+        super().__init__()
+
+        if n_features_in <= 0:
+            raise ValueError("n_features_in must be > 0")
+        if n_blocks <= 0:
+            raise ValueError("n_blocks must be > 0")
+
+        self.n_features_in = n_features_in
+        self.n_features_out = n_features_out if n_features_out is not None else n_features_in
+        if n_qubits is None:
+            target = min(64, max(4, n_features_in))
+            n_qubits = 1 << (math.ceil(math.log2(target)))
+
+        self.n_qubits = n_qubits
+        self.nonneg_output = nonneg_output
+
+        self.pre = nn.Linear(self.n_features_in, self.n_qubits)
+        self.post = nn.Linear(self.n_qubits, self.n_features_out)
+
+        perms = []
+        base = list(range(self.n_qubits))
+        step = max(1, self.n_qubits // 3)
+        for k in range(n_blocks):
+            shift = (step * k) % self.n_qubits
+            perm = base[shift:] + base[:shift]
+            perms.append(perm)
+
+        self.blocks = nn.ModuleList(
+            [
+                QuantumINNBlock(
+                    n_qubits=self.n_qubits,
+                    depth=depth_per_block,
+                    device_name=device_name,
+                    shots=shots,
+                    wire_permutation=perms[i],
+                    diff_method=q_diff_method,
+                )
+                for i in range(n_blocks)
+            ]
+        )
+
+        self.act_in = nn.Tanh()
+        self.act_mid = nn.Tanh()
+        self.softplus = nn.Softplus(beta=1.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.act_in(self.pre(x))
+        for blk in self.blocks:
+            h = blk.forward_block(h)
+            h = self.act_mid(h)
+        z = self.post(h)
+        return z
+
+    def inverse(self, z: torch.Tensor, enforce_nonneg: Optional[bool] = None) -> torch.Tensor:
+        if enforce_nonneg is None:
+            enforce_nonneg = self.nonneg_output
+
+        h = self.act_in(self.pre(z))
+        for blk in reversed(self.blocks):
+            h = blk.inverse_block(h)
+            h = self.act_mid(h)
+        x_rec = self.post(h)
+        if enforce_nonneg:
+            x_rec = self.softplus(x_rec)
+        return x_rec
+
+
+# ---------------------------
+# 4) MMD loss (RBF)
+# ---------------------------
+def mmd_rbf(x: torch.Tensor, y: torch.Tensor, sigma: Optional[float] = None) -> torch.Tensor:
+    """Maximum Mean Discrepancy with RBF kernel."""
+    with torch.no_grad():
+        if sigma is None:
+            xy = torch.cat([x, y], dim=0)
+            d2 = torch.cdist(xy, xy, p=2.0).pow(2)
+            positive = d2[d2 > 0]
+            if positive.numel() == 0:
+                sigma = 1.0
+            else:
+                med = torch.median(positive).clamp(min=1e-6)
+                sigma = torch.sqrt(med * 0.5).item()
+
+    gamma = 1.0 / (2.0 * (sigma**2 + 1e-12))
+
+    def k(a, b):
+        d2 = torch.cdist(a, b, p=2.0).pow(2)
+        return torch.exp(-gamma * d2)
+
+    k_xx = k(x, x)
+    k_yy = k(y, y)
+    k_xy = k(x, y)
+
+    m = x.shape[0]
+    n = y.shape[0]
+    term_xx = (k_xx.sum() - k_xx.diag().sum()) / (m * (m - 1) + 1e-12)
+    term_yy = (k_yy.sum() - k_yy.diag().sum()) / (n * (n - 1) + 1e-12)
+    term_xy = (2.0 * k_xy.sum()) / (m * n + 1e-12)
+    return term_xx + term_yy - term_xy
+
+
+class QINNModule(nn.Module):
+    """FastCaloQ-compatible wrapper around QuantumINN.
+
+    Compatible kwargs:
+    - in_features/out_features (existing bridge contract)
+    - use_pennylane: False -> classical fallback MLP
+    - n_qubits, n_blocks, depth_per_block
+    - n_q_layers: alias for depth_per_block (for backward compatibility)
+    - q_device, q_shots, q_diff_method
+    - nonneg_output
+    """
+
+    def __init__(
+        self,
+        in_features: int = 50,
+        out_features: int = 50,
+        hidden_features: int = 64,
+        use_pennylane: bool = True,
+        n_qubits: Optional[int] = None,
+        n_blocks: int = 2,
+        depth_per_block: int = 2,
+        n_q_layers: Optional[int] = None,
+        q_device: str = "default.qubit",
+        q_shots: Optional[int] = None,
+        q_diff_method: str = "auto",
+        nonneg_output: bool = True,
+        dropout: float = 0.0,
+        **_: object,
+    ):
+        super().__init__()
+
+        if in_features <= 0 or out_features <= 0:
+            raise ValueError("in_features and out_features must be > 0")
+
+        self.use_pennylane = use_pennylane
+        self.nonneg_output = nonneg_output
+
+        if not self.use_pennylane:
+            self.model = nn.Sequential(
+                nn.Linear(in_features, hidden_features),
+                nn.SiLU(),
+                nn.Dropout(p=dropout),
+                nn.Linear(hidden_features, out_features),
+            )
+            return
+
+        try:
+            global qml
+            import pennylane as qml
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "use_pennylane=True but PennyLane is not installed in the environment"
+            ) from exc
+
+        if n_q_layers is not None:
+            depth_per_block = n_q_layers
+
+        self.model = QuantumINN(
+            n_features_in=in_features,
+            n_features_out=out_features,
+            n_qubits=n_qubits,
+            n_blocks=n_blocks,
+            depth_per_block=depth_per_block,
+            shots=q_shots,
+            device_name=q_device,
+            nonneg_output=nonneg_output,
+            q_diff_method=q_diff_method,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.to(dtype=torch.float32)
+        if not self.use_pennylane:
+            return self.model(x)
+
+        # Generator semantics: latent -> data-like features.
+        return self.model.inverse(x, enforce_nonneg=self.nonneg_output)
+
+
+if __name__ == "__main__":
+    torch.manual_seed(0)
+
+    d = 64
+    model = QINNModule(
+        in_features=d,
+        out_features=d,
+        use_pennylane=False,
+        n_qubits=32,
+        n_blocks=3,
+        depth_per_block=2,
+        q_shots=None,
+        q_device="default.qubit",
+        nonneg_output=True,
+    )
+
+    batch = 32
+    z = torch.randn(batch, d)
+    x_hat = model(z)
+    x_real = torch.rand(batch, d) * 2.0
+
+    loss = mmd_rbf(x_hat, x_real)
+    print("MMD loss (demo):", float(loss))
