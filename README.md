@@ -33,6 +33,7 @@ python evaluate.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -t ../output/data
 
 Da questo branch e' disponibile il modello `BNReLUqINN` nel generatore FastCaloQ.
 
+
 ### Env setup -
 Only the first time 
 ```
@@ -66,6 +67,7 @@ Running test:
 ```
 python train.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -m BNReLUqINN -o ../output/dataset1/test -c ../config/config_qinn_example.json --max_iter 100
 ```
+
 
 
 ### 1) Mappatura firma input/output (plug-and-play)

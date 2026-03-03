@@ -58,7 +58,6 @@ class TorchQINNLayer(Layer):
     def _forward_numpy(self, x_np: np.ndarray) -> np.ndarray:
         self._load_torch_model()
 
-        # x_np = np.asarray(x_np, dtype=np.float32)
         # tf.py_function may provide a read-only NumPy view. Torch warns (and may
         # behave unsafely) when building tensors from non-writable arrays, so we
         # force an owned writable copy before from_numpy.
