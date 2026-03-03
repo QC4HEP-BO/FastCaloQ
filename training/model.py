@@ -19,9 +19,7 @@ from tensorflow.keras.layers import Layer
 
 from pdb import set_trace
 
-import tensorflow_quantum as tfq
-import cirq
-import sympy
+from importlib import import_module
 
 def encodeSingleInputIntoQuantumCircuit(singleInputToEncode, qubitsForEncoding, evaluateLabels=False):
     singleInputCircuit = cirq.Circuit()
@@ -49,7 +47,7 @@ def encodeIntoQuantumCircuit(inputToEncode, numberOfQubits, inputBatchSize=None,
 
 class WGANGP:
     def __init__(self, job_config, hp_config, logger, config_string=None, enableQuantum=False):
-        tf.keras.backend.set_floatx("float32")
+        tf.keras.backend.set_floatx("float64")
         self.loading = job_config.get('loading', None)
         if config_string:
             self.set_special_config(config_string)
@@ -80,11 +78,10 @@ class WGANGP:
         self.use_bias = hp_config.get('use_bias', True)
         self.random_mean= hp_config.get('latent_mean', 0.5)
         self.random_std = hp_config.get('latent_std', 0.5)
-        if enableQuantum:
-            self.Rz = hp_config.get('Rz', False)
-            self.twoCNOT = hp_config.get('2CNOT', False)
-            self.threeCNOT = hp_config.get('3CNOT', False)
-            self.fourCNOT = hp_config.get('4CNOT', False)
+        self.Rz = hp_config.get('Rz', False)
+        self.twoCNOT = hp_config.get('2CNOT', False)
+        self.threeCNOT = hp_config.get('3CNOT', False)
+        self.fourCNOT = hp_config.get('4CNOT', False)
 
         self.particle = job_config.get('particle', 'photons')
         self.eta_slice = job_config.get('eta_slice', '20_25')
@@ -117,7 +114,17 @@ class WGANGP:
                 tf.random.set_seed(22)
 
         self.enableQuantum = enableQuantum
+        self.dQuantum = hp_config.get('dQuantum', False)
+        self.dQubits = hp_config.get('dQubits', None)
 
+        self.usePennyLane = hp_config.get('usePennyLane', False)
+        if self.usePennyLane:
+            import pennylane as qml
+        elif self.enableQuantum:
+            import tensorflow_quantum as tfq
+            import cirq
+            import sympy
+        
         # Construct D and G models
         self.G = self.make_generator_functional_model()
         self.D = self.make_discriminator_model()
@@ -180,6 +187,7 @@ class WGANGP:
         if not self.no_output:
             logging.info('Use model %s', self.model)
         initializer = tf.keras.initializers.he_uniform()
+        self.generatorInitialiser = initializer
         bias_node = self.use_bias
 
         if self.model.startswith("GANv1"):
@@ -401,8 +409,14 @@ class WGANGP:
             G = SpectralNorm(layers.Dense(self.generatorLayers[2],use_bias=bias_node,activation="relu",kernel_initializer=initializer,bias_initializer="zeros"))(G)
             G = SpectralNorm(layers.Dense(self.nvoxels,use_bias=bias_node,activation="relu",kernel_initializer=initializer,bias_initializer="zeros"))(G)
         else:
-            print(self.model, 'not implemented')
-            raise NotImplementedError
+            # EXPECTED MODEL NAMING
+            # Model named "myGenerator" must be saved at training/models/myGenerator.py and inside that file there must be a function named myGenerator(wgan, G), taking "noise" or "con" as an input and setting wgan=self
+            try:
+                generator_model_module = import_module("models.{}".format(self.model))
+                generator_model_function = getattr(generator_model_module, self.model)
+                G = generator_model_function(self, noise if self.conditional_dim == 0 else con)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError(f"Model name {self.model} is not among existing models, check models directory.") from None
 
         generator = Model(inputs=[noise, condition] if self.conditional_dim != 0 else noise, outputs=G)
         if not self.no_output:
@@ -420,6 +434,7 @@ class WGANGP:
             bias_node = True
         else:
             initializer = tf.keras.initializers.he_uniform()
+            self.initializer = initializer
             bias_node = self.use_bias
 
         model = tf.keras.Sequential()
@@ -459,7 +474,16 @@ class WGANGP:
             model.add(layers.Dense(1, use_bias=bias_node,
                                     input_shape=(int(self.discriminatorLayers[2] * self.D_size),), kernel_initializer=initializer,bias_initializer="zeros")
                 )
-
+        else:
+            # EXPECTED MODEL NAMING
+            # Model named "myModel" must be saved at training/models/myModel.py and inside that file there must be a function named myModel(wgan, model), taking "model" (initialised as tf.keras.Sequential()) as an input and setting wgan=self
+            try:
+                model_module = import_module("models.{}".format(self.dmodel))
+                model_function = getattr(model_module, self.dmodel) #"create_model_{}".format(model_name))
+                model = model_function(self)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError(f"Model name {self.dmodel} is not among existing models, check models directory.") from None
+        
         if not self.no_output:
             model.summary()
             with open(os.path.join(self.train_folder, 'model.txt'), 'a') as fp:
@@ -468,7 +492,7 @@ class WGANGP:
 
     @tf.function
     def gradient_penalty(self, f, x_real, x_fake, cond_label):
-        alpha = tf.random.uniform([self.batchsize, 1], minval=0.0, maxval=1.0)
+        alpha = tf.random.uniform([self.batchsize, 1], minval=0.0, maxval=1.0, dtype=tf.dtypes.float64)
 
         inter = alpha * x_real + (1 - alpha) * x_fake
         with tf.GradientTape() as t:
@@ -535,15 +559,15 @@ class WGANGP:
     @tf.function
     def D_loss(self, x_real, cond_label):
         if self.model == "GANv1":
-            z = tf.random.uniform([self.batchsize, self.latent_dim],minval=-1,maxval=1,dtype=tf.dtypes.float32,)
+            z = tf.random.uniform([self.batchsize, self.latent_dim],minval=-1,maxval=1,dtype=tf.dtypes.float64,)
             logging.info('latent dist uniform -1, 1')
         elif self.model == "GANv1-Tlatuni":
-            z = tf.random.uniform([self.batchsize, self.latent_dim],minval=-1,maxval=1,dtype=tf.dtypes.float32,)
+            z = tf.random.uniform([self.batchsize, self.latent_dim],minval=-1,maxval=1,dtype=tf.dtypes.float64,)
             logging.info('latent dist uniform -1, 1')
         else:
-            z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
-            if not self.enableQuantum and self.conditional_dim != 0:
-                logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
+            z = tf.random.normal([self.batchsize, self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float64,)
+            #if not self.enableQuantum and self.conditional_dim != 0:
+            #    logging.info(f'latent dist normal mean {self.random_mean} std {self.random_std}')
         if self.enableQuantum:
             zQuantum = encodeIntoQuantumCircuit(z, self.latent_dim, inputBatchSize=self.batchsize)
             if self.conditional_dim != 0:
@@ -553,7 +577,7 @@ class WGANGP:
             x_fake = self.G(inputs=[z, cond_label] if self.conditional_dim != 0 else z)
         if self.special_config == 'normlayer1':
             x_fake = self.manipulate_x_fake(x_fake)
-
+        cond_label = tf.cast(cond_label, tf.float64)
         D_fake = self.D(tf.concat([x_fake, cond_label], 1))
         D_real = self.D(tf.concat([x_real, cond_label], 1))
         D_loss = (tf.reduce_mean(D_fake)- tf.reduce_mean(D_real)+ self.gradient_penalty(f=partial(self.D, training=True),x_real=x_real,x_fake=x_fake,cond_label=cond_label,))
@@ -610,8 +634,8 @@ class WGANGP:
             existing_models = []
         meta_data = {'Iteration': [], 'Gloss': [], 'Dloss': [], 'time': []}
 
-        self.X = tf.convert_to_tensor(X_train, dtype=tf.float32)
-        self.Labels = tf.convert_to_tensor(label, dtype=tf.float32)
+        self.X = tf.convert_to_tensor(X_train, dtype=tf.float64)
+        self.Labels = tf.convert_to_tensor(label, dtype=tf.float64)
         self.getTrainData_ultimate(self.max_iter)
 
         if self.loading is not None:
@@ -646,6 +670,7 @@ class WGANGP:
                     dur_train_loop, dur_convert_loop, dur_getnext_loop = 0, 0, 0
 
 
+            #print("Iteration no.", iteration, end="\r")
             getnext_loop_start = time.time()
             X, Labels = self.ds_iter.get_next()
             getnext_loop_stop = time.time()
@@ -700,7 +725,7 @@ class WGANGP:
         self.saver.restore(f'{checkpoint_dir}/model-{model_i}').expect_partial()
         if ischeck:
             return 0
-        z = tf.random.normal([labels.shape[0], self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float32,)
+        z = tf.random.normal([labels.shape[0], self.latent_dim],mean=self.random_mean,stddev=self.random_std,dtype=tf.dtypes.float64,)
         print("z shape", z.shape)
         if self.conditional_dim == 2 and labels.shape[1] == 1:
             labels = tf.concat([labels, tf.zeros_like(labels)], axis=1)
@@ -759,7 +784,7 @@ class SpectralNorm(Wrapper):
 
             self.w = self.layer.kernel
             self.w_shape = self.w.shape.as_list()
-            self.u = self.add_weight(shape=(1, self.w_shape[-1]), initializer=tf.random_normal_initializer(), name='sn_u', trainable=False, dtype=tf.float32)
+            self.u = self.add_weight(shape=(1, self.w_shape[-1]), initializer=tf.random_normal_initializer(), name='sn_u', trainable=False, dtype=tf.float64)
 
         super(SpectralNorm, self).build()
 
