@@ -247,12 +247,20 @@ class WGANGP:
             qinn_output_dim = int(self.latent_dim + self.conditional_dim)
             qinn_output_dim = int(self.generatorLayers[0]) if self.generatorLayers[0] != 0 else qinn_output_dim
 
+            # fix path to track weights, not authomatical with torch-> keras interaction
+            qinn_state_path = self.hp_config.get(
+                "qinn_state_path",
+                os.path.join(self.output, "qinn_module_state.pt"),
+            )
+
             qinn_layer = TorchQINNLayer(
                 module_path=self.hp_config.get("qinn_module_path", "qinn_module"),
                 module_class=self.hp_config.get("qinn_module_class", "QINNModule"),
                 module_kwargs_json=json.dumps(self.hp_config.get("qinn_module_kwargs", {})),
                 output_dim=self.hp_config.get("qinn_output_dim", qinn_output_dim),
                 torch_device=self.hp_config.get("qinn_torch_device", "cpu"),
+                state_path=qinn_state_path,
+                save_state_if_missing=self.hp_config.get("qinn_save_state_if_missing", True),
                 name="qinn_bridge",
             )
             G = qinn_layer(qinn_input)

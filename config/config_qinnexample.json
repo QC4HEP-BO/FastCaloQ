@@ -3,7 +3,11 @@
     "lam": 20,
     "latent_dim": 10,
     "conditional_dim": 0,
-    "generatorLayers": [100, 64, 0],
+    "generatorLayers": [
+        100,
+        64,
+        0
+    ],
     "qinn_module_path": "qinn_module",
     "qinn_module_class": "QINNModule",
     "qinn_module_kwargs": {
@@ -20,5 +24,7 @@
         "q_entanglement": "linear"
     },
     "qinn_output_dim": 100,
-    "qinn_torch_device": "cpu"
+    "qinn_torch_device": "cpu",
+    "qinn_state_path": "../output/dataset1/test_inversion/pions_eta_20_25/qinn_module_state.pt",
+    "qinn_save_state_if_missing": true
 }
