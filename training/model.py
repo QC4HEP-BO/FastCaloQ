@@ -261,6 +261,9 @@ class WGANGP:
                 torch_device=self.hp_config.get("qinn_torch_device", "cpu"),
                 state_path=qinn_state_path,
                 save_state_if_missing=self.hp_config.get("qinn_save_state_if_missing", True),
+                deterministic_init=self.hp_config.get("qinn_deterministic_init", False),
+                init_seed=self.hp_config.get("qinn_init_seed", 11),
+                require_state=self.hp_config.get("qinn_require_state", False),
                 name="qinn_bridge",
             )
             G = qinn_layer(qinn_input)
