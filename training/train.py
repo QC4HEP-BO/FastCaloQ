@@ -213,7 +213,7 @@ def main(args):
     job_config = {
         'particle': particle+'s',
         'eta_slice': '20_25',
-        'checkpoint_interval': 10,
+        'checkpoint_interval': 100,
         'output': args.output_path,
         'max_iter': 4E5 if args.loading else args.max_iter,
         'cache': False,

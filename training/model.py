@@ -660,7 +660,7 @@ class WGANGP:
             logging.info(f"Load model from {self.loading}")
 
         for iteration in range(0, self.max_iter + 1):
-            if iteration % self.checkpoint_interval == 0:
+            if iteration % self.pointpoint_interval == 0:
                 if len(existing_models) > 1:
                     with open(os.path.join(self.train_folder, 'result.json'), 'r') as fp:
                         meta_data = json.load(fp)
