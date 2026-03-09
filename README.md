@@ -84,9 +84,18 @@ Per debug riproducibile senza file stato, abilita `qinn_deterministic_init`.
 `training/qinn_module.py` ora include un modulo ibrido:
 
 - `use_pennylane=false`: percorso MLP classico (debug veloce)
-- `use_pennylane=true`: percorso quantum con `qml.qnn.TorchLayer`
+- `use_pennylane=true`: percorso quantum con blocchi invertibili PennyLane
 
 Cosi' puoi fare debug in modo incrementale e passare al blocco quantistico senza cambiare il bridge.
+
+Per il debug di biettivita' (toy studies) puoi anche salvare lo stato quantistico completo per ogni blocco:
+
+- `qinn_module_kwargs.q_capture_quantum_state=true`
+- `qinn_module_kwargs.q_capture_state_kind="statevector"` oppure `"density_matrix"`
+- `qinn_module_kwargs.q_capture_output_dir="..."`
+- `qinn_module_kwargs.q_capture_every_n_calls` e `q_capture_max_calls` per limitare I/O e dimensioni
+
+Nota: questa opzione e' pensata per simulatori e pochi qubit; lo stato cresce esponenzialmente con `n_qubits`.
 
 ### 4) Nota importante su training
 
