@@ -11,6 +11,7 @@ Input/output contract expected by the bridge:
 """
 
 import math
+from pathlib import Path
 from typing import List, Optional
 
 import torch
@@ -58,6 +59,12 @@ class QuantumINNBlock(nn.Module):
         wire_permutation: Optional[List[int]] = None,
         interface: str = "torch",
         diff_method: str = "auto",
+        block_id: int = 0,
+        capture_quantum_state: bool = False,
+        capture_state_kind: str = "statevector",
+        capture_output_dir: Optional[str] = None,
+        capture_every_n_calls: int = 1,
+        capture_max_calls: int = -1,
     ):
         super().__init__()
 
@@ -70,6 +77,14 @@ class QuantumINNBlock(nn.Module):
         self.depth = depth
         self.wires = list(range(n_qubits))
         self.perm = wire_permutation if wire_permutation is not None else list(range(n_qubits))
+        self.block_id = block_id
+        self.capture_quantum_state = capture_quantum_state
+        self.capture_state_kind = capture_state_kind
+        self.capture_output_dir = Path(capture_output_dir) if capture_output_dir else None
+        self.capture_every_n_calls = max(1, int(capture_every_n_calls))
+        self.capture_max_calls = int(capture_max_calls)
+        self._capture_call_count = 0
+        self._captured_count = 0
 
         init_scale = 0.01
         self.weights = nn.Parameter(init_scale * torch.randn(depth, n_qubits, 3))
@@ -91,6 +106,32 @@ class QuantumINNBlock(nn.Module):
         self.qnode_fwd = qml.QNode(circuit_forward, self.dev, interface=interface, diff_method=diff_method)
         self.qnode_inv = qml.QNode(circuit_inverse, self.dev, interface=interface, diff_method=diff_method)
 
+        if self.capture_quantum_state:
+            if self.capture_state_kind not in {"statevector", "density_matrix"}:
+                raise ValueError("capture_state_kind must be 'statevector' or 'density_matrix'")
+            self.capture_output_dir = self.capture_output_dir or Path("qinn_state_debug")
+            self.capture_output_dir.mkdir(parents=True, exist_ok=True)
+            self._dev_state = qml.device(device_name, wires=n_qubits, shots=None)
+
+            def circuit_forward_state(x, weights):
+                x_perm = x[..., self.perm]
+                qml.AngleEmbedding(x_perm, wires=self.wires, rotation="Y")
+                unitary_template(weights, self.wires)
+                if self.capture_state_kind == "statevector":
+                    return qml.state()
+                return qml.density_matrix(wires=self.wires)
+
+            def circuit_inverse_state(z, weights):
+                z_perm = z[..., self.perm]
+                qml.AngleEmbedding(z_perm, wires=self.wires, rotation="Y")
+                qml.adjoint(unitary_template)(weights, self.wires)
+                if self.capture_state_kind == "statevector":
+                    return qml.state()
+                return qml.density_matrix(wires=self.wires)
+
+            self.qnode_fwd_state = qml.QNode(circuit_forward_state, self._dev_state, interface=interface, diff_method=diff_method)
+            self.qnode_inv_state = qml.QNode(circuit_inverse_state, self._dev_state, interface=interface, diff_method=diff_method)
+
     @staticmethod
     def _qnode_output_to_tensor(out):
         """Normalize PennyLane QNode outputs to a torch.Tensor.
@@ -106,9 +147,41 @@ class QuantumINNBlock(nn.Module):
         return out
 
 
+    def _maybe_capture_state(self, x: torch.Tensor, direction: str):
+        if not self.capture_quantum_state:
+            return
+
+        self._capture_call_count += 1
+        if self._capture_call_count % self.capture_every_n_calls != 0:
+            return
+        if self.capture_max_calls >= 0 and self._captured_count >= self.capture_max_calls:
+            return
+
+        if direction == "forward":
+            state = self.qnode_fwd_state(x, self.weights)
+        elif direction == "inverse":
+            state = self.qnode_inv_state(x, self.weights)
+        else:
+            raise ValueError(f"Unknown direction: {direction}")
+
+        payload = {
+            "block_id": self.block_id,
+            "direction": direction,
+            "capture_index": self._captured_count,
+            "state_kind": self.capture_state_kind,
+            "state": state.detach().cpu(),
+        }
+        out_file = self.capture_output_dir / (
+            f"block_{self.block_id:02d}_{direction}_{self.capture_state_kind}_{self._captured_count:06d}.pt"
+        )
+        torch.save(payload, out_file)
+        self._captured_count += 1
+
+
     def forward_block(self, x: torch.Tensor) -> torch.Tensor:
         out = self.qnode_fwd(x, self.weights)
         out = self._qnode_output_to_tensor(out)
+        self._maybe_capture_state(x, direction="forward")
         # PennyLane may emit float64 expvals; keep dtype aligned with module weights
         # (typically float32) to avoid matmul dtype mismatch in torch Linear layers.
         return out.to(dtype=self.weights.dtype)
@@ -116,6 +189,7 @@ class QuantumINNBlock(nn.Module):
     def inverse_block(self, z: torch.Tensor) -> torch.Tensor:
         out = self.qnode_inv(z, self.weights)
         out = self._qnode_output_to_tensor(out)
+        self._maybe_capture_state(z, direction="inverse")
         return out.to(dtype=self.weights.dtype)
 
 
@@ -136,6 +210,11 @@ class QuantumINN(nn.Module):
         device_name: str = "default.qubit",
         nonneg_output: bool = True,
         q_diff_method: str = "auto",
+        capture_quantum_state: bool = False,
+        capture_state_kind: str = "statevector",
+        capture_output_dir: Optional[str] = None,
+        capture_every_n_calls: int = 1,
+        capture_max_calls: int = -1,
     ):
         super().__init__()
 
@@ -173,6 +252,12 @@ class QuantumINN(nn.Module):
                     shots=shots,
                     wire_permutation=perms[i],
                     diff_method=q_diff_method,
+                    block_id=i,
+                    capture_quantum_state=capture_quantum_state,
+                    capture_state_kind=capture_state_kind,
+                    capture_output_dir=capture_output_dir,
+                    capture_every_n_calls=capture_every_n_calls,
+                    capture_max_calls=capture_max_calls,
                 )
                 for i in range(n_blocks)
             ]
@@ -265,6 +350,11 @@ class QINNModule(nn.Module):
         q_diff_method: str = "auto",
         nonneg_output: bool = True,
         dropout: float = 0.0,
+        q_capture_quantum_state: bool = False,
+        q_capture_state_kind: str = "statevector",
+        q_capture_output_dir: Optional[str] = None,
+        q_capture_every_n_calls: int = 1,
+        q_capture_max_calls: int = -1,
         **_: object,
     ):
         super().__init__()
@@ -305,6 +395,11 @@ class QINNModule(nn.Module):
             device_name=q_device,
             nonneg_output=nonneg_output,
             q_diff_method=q_diff_method,
+            capture_quantum_state=q_capture_quantum_state,
+            capture_state_kind=q_capture_state_kind,
+            capture_output_dir=q_capture_output_dir,
+            capture_every_n_calls=q_capture_every_n_calls,
+            capture_max_calls=q_capture_max_calls,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
