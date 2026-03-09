@@ -250,7 +250,7 @@ class WGANGP:
             # fix path to track weights, not authomatical with torch-> keras interaction
             qinn_state_path = self.hp_config.get(
                 "qinn_state_path",
-                os.path.join(self.output, "qinn_module_state.pt"),
+                os.path.join(self.output, "checkpoints", "qinn_module_state-init.pt"),
             )
 
             qinn_layer = TorchQINNLayer(
@@ -551,6 +551,17 @@ class WGANGP:
 
         self.subsets = list(zip(voxel_lists, activation_list))
 
+    def _save_qinn_checkpoint_artifacts(self, checkpoint_dir, iteration):
+        if self.model != "BNReLUqINN":
+            return
+
+        try:
+            qinn_layer = self.G.get_layer("qinn_bridge")
+        except ValueError:
+            return
+
+        if hasattr(qinn_layer, "save_checkpoint_artifacts"):
+            qinn_layer.save_checkpoint_artifacts(checkpoint_dir, iteration)
 
     @tf.function
     def manipulate_x_fake(self, x_fake):
@@ -660,7 +671,7 @@ class WGANGP:
             logging.info(f"Load model from {self.loading}")
 
         for iteration in range(0, self.max_iter + 1):
-            if iteration % self.pointpoint_interval == 0:
+            if iteration % self.checkpoint_interval == 0:
                 if len(existing_models) > 1:
                     with open(os.path.join(self.train_folder, 'result.json'), 'r') as fp:
                         meta_data = json.load(fp)
@@ -670,6 +681,7 @@ class WGANGP:
                 else:
                     e_time = time.time()
                     self.saver.save(file_prefix=checkpoint_dir + "/model")
+                    self._save_qinn_checkpoint_artifacts(checkpoint_dir, iteration)
                     save_time = time.time() - e_time
                     with open(os.path.join(self.train_folder, 'result.json'), 'w') as fp:
                         json.dump(meta_data, fp, indent=2)

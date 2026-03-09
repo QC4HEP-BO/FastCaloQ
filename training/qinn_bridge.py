@@ -100,6 +100,25 @@ class TorchQINNLayer(Layer):
         y_np = y_tensor.detach().cpu().numpy().astype(np.float32)
         return y_np
 
+    
+    def save_checkpoint_artifacts(self, checkpoint_dir: str, iteration: int):
+        """Persist qINN artifacts alongside TF checkpoints."""
+        self._load_torch_model()
+
+        checkpoint_path = Path(checkpoint_dir)
+        checkpoint_path.mkdir(parents=True, exist_ok=True)
+
+        if hasattr(self._torch_model, "save_checkpoint_artifacts"):
+            self._torch_model.save_checkpoint_artifacts(str(checkpoint_path), int(iteration))
+            return
+
+        # Fallback for generic torch modules without helper APIs.
+        self._torch.save(
+            self._torch_model.state_dict(),
+            checkpoint_path / f"qinn_module_state-{int(iteration)}.pt",
+        )
+        
+
     def call(self, inputs):
         @tf.custom_gradient
         def _wrapped(x):

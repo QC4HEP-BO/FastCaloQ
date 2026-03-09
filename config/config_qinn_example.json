@@ -3,7 +3,11 @@
     "lam": 20,
     "latent_dim": 10,
     "conditional_dim": 0,
-    "generatorLayers": [100, 64, 0],
+    "generatorLayers": [
+        100,
+        64,
+        0
+    ],
     "qinn_module_path": "qinn_module",
     "qinn_module_class": "QINNModule",
     "qinn_module_kwargs": {
@@ -17,8 +21,18 @@
         "q_device": "default.qubit",
         "q_diff_method": "best",
         "q_shots": null,
-        "q_entanglement": "linear"
+        "q_entanglement": "linear",
+        "q_capture_quantum_state": false,
+        "q_capture_state_kind": "statevector",
+        "q_capture_output_dir": "../output/dataset1/test_inversion/qinn_quantum_state",
+        "q_capture_every_n_calls": 100,
+        "q_capture_max_calls": 10
     },
     "qinn_output_dim": 100,
-    "qinn_torch_device": "cpu"
+    "qinn_torch_device": "cpu",
+    "qinn_state_path": "../output/dataset1/test_inversion/pions_eta_20_25/checkpoints/qinn_module_state-init.pt",
+    "qinn_save_state_if_missing": true,
+    "qinn_deterministic_init": false,
+    "qinn_init_seed": 11,
+    "qinn_require_state": false
 }
