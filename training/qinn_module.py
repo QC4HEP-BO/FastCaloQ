@@ -11,7 +11,6 @@ Input/output contract expected by the bridge:
 """
 
 import math
-from pathlib import Path
 from typing import List, Optional
 
 import torch
@@ -62,7 +61,6 @@ class QuantumINNBlock(nn.Module):
         block_id: int = 0,
         capture_quantum_state: bool = False,
         capture_state_kind: str = "statevector",
-        capture_output_dir: Optional[str] = None,
         capture_every_n_calls: int = 1,
         capture_max_calls: int = -1,
     ):
@@ -80,7 +78,6 @@ class QuantumINNBlock(nn.Module):
         self.block_id = block_id
         self.capture_quantum_state = capture_quantum_state
         self.capture_state_kind = capture_state_kind
-        self.capture_output_dir = Path(capture_output_dir) if capture_output_dir else None
         self.capture_every_n_calls = max(1, int(capture_every_n_calls))
         self.capture_max_calls = int(capture_max_calls)
         self._capture_call_count = 0
@@ -110,8 +107,6 @@ class QuantumINNBlock(nn.Module):
         if self.capture_quantum_state:
             if self.capture_state_kind not in {"statevector", "density_matrix"}:
                 raise ValueError("capture_state_kind must be 'statevector' or 'density_matrix'")
-            self.capture_output_dir = self.capture_output_dir or Path("qinn_state_debug")
-            self.capture_output_dir.mkdir(parents=True, exist_ok=True)
             self._dev_state = qml.device(device_name, wires=n_qubits, shots=None)
 
             def circuit_forward_state(x, weights):
@@ -219,7 +214,6 @@ class QuantumINN(nn.Module):
         q_diff_method: str = "auto",
         capture_quantum_state: bool = False,
         capture_state_kind: str = "statevector",
-        capture_output_dir: Optional[str] = None,
         capture_every_n_calls: int = 1,
         capture_max_calls: int = -1,
     ):
@@ -262,7 +256,6 @@ class QuantumINN(nn.Module):
                     block_id=i,
                     capture_quantum_state=capture_quantum_state,
                     capture_state_kind=capture_state_kind,
-                    capture_output_dir=capture_output_dir,
                     capture_every_n_calls=capture_every_n_calls,
                     capture_max_calls=capture_max_calls,
                 )
@@ -386,7 +379,6 @@ class QINNModule(nn.Module):
         dropout: float = 0.0,
         q_capture_quantum_state: bool = False,
         q_capture_state_kind: str = "statevector",
-        q_capture_output_dir: Optional[str] = None,
         q_capture_every_n_calls: int = 1,
         q_capture_max_calls: int = -1,
         **_: object,
@@ -431,7 +423,6 @@ class QINNModule(nn.Module):
             q_diff_method=q_diff_method,
             capture_quantum_state=q_capture_quantum_state,
             capture_state_kind=q_capture_state_kind,
-            capture_output_dir=q_capture_output_dir,
             capture_every_n_calls=q_capture_every_n_calls,
             capture_max_calls=q_capture_max_calls,
         )
