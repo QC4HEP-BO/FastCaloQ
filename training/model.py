@@ -249,7 +249,7 @@ class WGANGP:
 
             qinn_state_path = self.hp_config.get(
                 "qinn_state_path",
-                os.path.join(self.output, "qinn_module_state.pt"),
+                os.path.join(self.output, "checkpoints", "qinn_module_state-init.pt"),
             )
             qinn_layer = TorchQINNLayer(
                 module_path=self.hp_config.get("qinn_module_path", "qinn_module"),
@@ -633,6 +633,18 @@ class WGANGP:
             self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.G.trainable_variables))
             return D_loss_curr, G_loss_curr
 
+    def _save_qinn_checkpoint_artifacts(self, checkpoint_dir, iteration):
+        if self.model != "BNReLUqINN":
+            return
+
+        try:
+            qinn_layer = self.G.get_layer("qinn_bridge")
+        except ValueError:
+            return
+
+        if hasattr(qinn_layer, "save_checkpoint_artifacts"):
+            qinn_layer.save_checkpoint_artifacts(checkpoint_dir, iteration)
+
     def train(self, X_train, label):
         checkpoint_dir = os.path.join(self.output, 'checkpoints')
         logging.info(f'Training size X: {X_train.shape}, label: {label.shape}')
@@ -668,6 +680,7 @@ class WGANGP:
                 else:
                     e_time = time.time()
                     self.saver.save(file_prefix=checkpoint_dir + "/model")
+                    self._save_qinn_checkpoint_artifacts(checkpoint_dir, iteration)
                     save_time = time.time() - e_time
                     with open(os.path.join(self.train_folder, 'result.json'), 'w') as fp:
                         json.dump(meta_data, fp, indent=2)

@@ -79,6 +79,7 @@ class QuantumINNBlock(nn.Module):
         self.capture_max_calls = int(capture_max_calls)
         self._capture_call_count = 0
         self._captured_count = 0
+        self._last_capture = {}
 
         init_scale = 0.01
         self.weights = nn.Parameter(init_scale * torch.randn(depth, n_qubits, 3))
@@ -161,14 +162,20 @@ class QuantumINNBlock(nn.Module):
             "block_id": self.block_id,
             "direction": direction,
             "capture_index": self._captured_count,
+            "call_index": self._capture_call_count,
             "state_kind": self.capture_state_kind,
             "state": state.detach().cpu(),
         }
-        out_file = self.capture_output_dir / (
-            f"block_{self.block_id:02d}_{direction}_{self.capture_state_kind}_{self._captured_count:06d}.pt"
-        )
-        torch.save(payload, out_file)
+        self._last_capture[direction] = payload
         self._captured_count += 1
+
+    def get_latest_capture(self):
+        if not self.capture_quantum_state:
+            return None
+        return {
+            "block_id": self.block_id,
+            "captures": dict(self._last_capture),
+        }
 
     def forward_block(self, x: torch.Tensor) -> torch.Tensor:
         out = self.qnode_fwd(x, self.weights)
@@ -279,6 +286,14 @@ class QuantumINN(nn.Module):
         if enforce_nonneg:
             x_rec = self.softplus(x_rec)
         return x_rec
+
+    def collect_latest_quantum_state(self):
+        snapshots = []
+        for blk in self.blocks:
+            snap = blk.get_latest_capture()
+            if snap is not None:
+                snapshots.append(snap)
+        return snapshots
 
 
 # ---------------------------
@@ -393,6 +408,22 @@ class QINNModule(nn.Module):
             capture_every_n_calls=q_capture_every_n_calls,
             capture_max_calls=q_capture_max_calls,
         )
+
+    def save_checkpoint_artifacts(self, checkpoint_dir: str, iteration: int):
+        checkpoint_path = Path(checkpoint_dir)
+        checkpoint_path.mkdir(parents=True, exist_ok=True)
+
+        torch.save(self.state_dict(), checkpoint_path / f"qinn_module_state-{int(iteration)}.pt")
+
+        if self.use_pennylane:
+            snapshots = self.model.collect_latest_quantum_state()
+            if snapshots:
+                payload = {
+                    "iteration": int(iteration),
+                    "state_kind": snapshots[0]["captures"].get("forward", snapshots[0]["captures"].get("inverse", {})).get("state_kind", "unknown") if snapshots else "unknown",
+                    "blocks": snapshots,
+                }
+                torch.save(payload, checkpoint_path / f"qinn_quantum_state-{int(iteration)}.pt")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.to(dtype=torch.float32)
