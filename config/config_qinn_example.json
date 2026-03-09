@@ -26,5 +26,8 @@
     "qinn_output_dim": 100,
     "qinn_torch_device": "cpu",
     "qinn_state_path": "../output/dataset1/test_inversion/pions_eta_20_25/qinn_module_state.pt",
-    "qinn_save_state_if_missing": true
+    "qinn_save_state_if_missing": true,
+    "qinn_deterministic_init": true,
+    "qinn_init_seed": 11,
+    "qinn_require_state": false
 }

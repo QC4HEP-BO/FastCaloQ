@@ -32,6 +32,9 @@ class TorchQINNLayer(Layer):
         torch_device: str = "cpu",
         state_path: Optional[str] = None,
         save_state_if_missing: bool = True,
+        deterministic_init: bool = False,
+        init_seed: int = 11,
+        require_state: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -42,6 +45,9 @@ class TorchQINNLayer(Layer):
         self.torch_device = torch_device
         self.state_path = state_path
         self.save_state_if_missing = save_state_if_missing
+        self.deterministic_init = deterministic_init
+        self.init_seed = init_seed
+        self.require_state = require_state
 
         self._torch = None
         self._torch_model = None
@@ -56,6 +62,11 @@ class TorchQINNLayer(Layer):
         imported_module = importlib.import_module(self.module_path)
         qinn_class = getattr(imported_module, self.module_class)
 
+        if self.deterministic_init:
+            torch.manual_seed(int(self.init_seed))
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(int(self.init_seed))
+
         self._torch = torch
         self._torch_model = qinn_class(**module_kwargs).to(self.torch_device)
 
@@ -64,6 +75,8 @@ class TorchQINNLayer(Layer):
             if state_file.exists():
                 state_dict = torch.load(str(state_file), map_location=self.torch_device)
                 self._torch_model.load_state_dict(state_dict, strict=True)
+            elif self.require_state:
+                raise FileNotFoundError(f"qINN state file not found: {state_file}")
             elif self.save_state_if_missing:
                 state_file.parent.mkdir(parents=True, exist_ok=True)
                 torch.save(self._torch_model.state_dict(), str(state_file))
@@ -110,6 +123,9 @@ class TorchQINNLayer(Layer):
                 "torch_device": self.torch_device,
                 "state_path": self.state_path,
                 "save_state_if_missing": self.save_state_if_missing,
+                "deterministic_init": self.deterministic_init,
+                "init_seed": self.init_seed,
+                "require_state": self.require_state,
             }
         )
         return cfg
