@@ -1,5 +1,6 @@
 import importlib
 import json
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -29,6 +30,8 @@ class TorchQINNLayer(Layer):
         module_kwargs_json: str = "{}",
         output_dim: Optional[int] = None,
         torch_device: str = "cpu",
+        state_path: Optional[str] = None,
+        save_state_if_missing: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -37,6 +40,8 @@ class TorchQINNLayer(Layer):
         self.module_kwargs_json = module_kwargs_json
         self.output_dim = output_dim
         self.torch_device = torch_device
+        self.state_path = state_path
+        self.save_state_if_missing = save_state_if_missing
 
         self._torch = None
         self._torch_model = None
@@ -53,6 +58,16 @@ class TorchQINNLayer(Layer):
 
         self._torch = torch
         self._torch_model = qinn_class(**module_kwargs).to(self.torch_device)
+
+        if self.state_path:
+            state_file = Path(self.state_path)
+            if state_file.exists():
+                state_dict = torch.load(str(state_file), map_location=self.torch_device)
+                self._torch_model.load_state_dict(state_dict, strict=True)
+            elif self.save_state_if_missing:
+                state_file.parent.mkdir(parents=True, exist_ok=True)
+                torch.save(self._torch_model.state_dict(), str(state_file))
+
         self._torch_model.eval()
 
     def _forward_numpy(self, x_np: np.ndarray) -> np.ndarray:
@@ -93,6 +108,8 @@ class TorchQINNLayer(Layer):
                 "module_kwargs_json": self.module_kwargs_json,
                 "output_dim": self.output_dim,
                 "torch_device": self.torch_device,
+                "state_path": self.state_path,
+                "save_state_if_missing": self.save_state_if_missing,
             }
         )
         return cfg

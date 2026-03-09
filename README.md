@@ -44,6 +44,10 @@ Nel file `config/config_qinn_example.json`:
 
 - `qinn_module_kwargs.in_features` deve coincidere con `latent_dim + conditional_dim`
 - `qinn_module_kwargs.out_features` deve coincidere con `qinn_output_dim`
+- opzionale: `qinn_state_path` per salvare/caricare lo stato Torch del modulo qINN (default: `<output>/qinn_module_state.pt`)
+
+**Importante:** con il bridge TF->Torch i pesi Torch non sono aggiornati da Keras.
+Per evitare mismatch tra train/evaluate dovuti a inizializzazioni casuali diverse, usa lo stesso `qinn_state_path`.
 
 ### 2) Configurazione base
 
