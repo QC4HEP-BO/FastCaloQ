@@ -67,7 +67,7 @@ fi
 if [[ ${task} == *'train'* ]]; then
     #command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition}"
     # command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --max_iter 1000000 --quantum"
-    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --max_iter 1000"
+    command="python train.py -i ${input} -m ${model} -o ../output/dataset${ds}/${version}/${output} -c ../config/config_${config}.json ${train_addition} --max_iter 500"
 else
     # command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition} --debug --save_h5 --quantum"
     command="python evaluate.py -i ${input} -t ../output/dataset${ds}/${version}/${output} --checkpoint ${evaluate_addition}  --save_h5"

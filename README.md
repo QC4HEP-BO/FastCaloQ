@@ -58,14 +58,14 @@ Every time
 setupATLAS
 lsetup "python 3.11.14-x86_64-el9"
 
-source venv_qINN/bin/activate
+source /eos/home-m/matteo/venv_qINN/bin/activate
 
 export TF_USE_LEGACY_KERAS=1
 ```
 
 Running test:
 ```
-python train.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -m BNReLUqINN -o ../output/dataset1/test_inversion -c ../config/config_qinnexample.json --max_iter 10
+python train.py -i ../input/dataset1/dataset_1_pions_1.hdf5 -m BNReLUqINN -o ../output/dataset1/test_inversion -c ../config/config_qinnexample.json --debug --max_iter 10
 ```
 
 
