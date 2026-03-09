@@ -85,8 +85,7 @@ class QuantumINNBlock(nn.Module):
         self.qnode_fwd = qml.QNode(circuit_forward, self.dev, interface=interface, diff_method=diff_method)
         self.qnode_inv = qml.QNode(circuit_inverse, self.dev, interface=interface, diff_method=diff_method)
 
-    @staticmethod
-    def _qnode_output_to_tensor(out):
+    def _qnode_output_to_tensor(self, out):
         """Normalize PennyLane QNode outputs to a torch.Tensor.
 
         With multiple expvals PennyLane can return a Python list/tuple of tensors;
@@ -95,8 +94,11 @@ class QuantumINNBlock(nn.Module):
         if isinstance(out, (list, tuple)):
             if len(out) == 0:
                 raise ValueError("QNode output is empty")
-            return torch.stack(out, dim=-1)
-        return out
+            out = torch.stack(out, dim=-1)
+
+        # PennyLane may emit float64 expvals; keep dtype aligned with module weights
+        # (typically float32) to avoid matmul dtype mismatch in torch Linear layers.
+        return out.to(dtype=self.weights.dtype)
 
     def forward_block(self, x: torch.Tensor) -> torch.Tensor:
         out = self.qnode_fwd(x, self.weights)
