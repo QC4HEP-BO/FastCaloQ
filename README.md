@@ -44,7 +44,7 @@ Nel file `config/config_qinn_example.json`:
 
 - `qinn_module_kwargs.in_features` deve coincidere con `latent_dim + conditional_dim`
 - `qinn_module_kwargs.out_features` deve coincidere con `qinn_output_dim`
-- opzionale: `qinn_state_path` per salvare/caricare lo stato Torch del modulo qINN (default: `<output>/qinn_module_state.pt`)
+- opzionale: `qinn_state_path` per salvare/caricare lo stato Torch del modulo qINN (default relativo alla run: `checkpoints/qinn_module_state-init.pt`)
 - opzionale: `qinn_deterministic_init=true` e `qinn_init_seed=<int>` per inizializzare il qINN in modo riproducibile quando il file stato manca
 - opzionale: `qinn_require_state=true` per fallire esplicitamente se `qinn_state_path` non esiste (controllo robusto in evaluate)
 
