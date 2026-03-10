@@ -40,7 +40,7 @@ Per essere compatibile con `train.py` / `evaluate.py`, il modulo qINN deve rispe
 - input: `[batch, latent_dim + conditional_dim]`
 - output: `[batch, qinn_output_dim]`
 
-Nel file `config/config_qinn_example.json`:
+Nel file `config/config_qinnexample.json`:
 
 - `qinn_module_kwargs.in_features` deve coincidere con `latent_dim + conditional_dim`
 - `qinn_module_kwargs.out_features` deve coincidere con `qinn_output_dim`
@@ -116,14 +116,14 @@ Per avere una procedura **vera qINN** separata dalla chain GAN, usa gli script d
 
 ```bash
 cd training
-python train_qinn.py -i ../input/dataset1/dataset_1_pions_1.hdf5   -o ../output/dataset1/qinn_standalone/run1   -c ../config/config_qinn_standalone_example.json
+python train_qinn.py -i ../input/dataset1/dataset_1_pions_1.hdf5   -o ../output/dataset1/qinn_standalone/run1   -c ../config/config_qinnstandaloneexample.json
 ```
 
 Valutazione qINN standalone (checkpoint torch):
 
 ```bash
 cd training
-python evaluate_qinn.py -i ../input/dataset1/dataset_1_pions_1.hdf5   --checkpoint ../output/dataset1/qinn_standalone/run1/checkpoints/qinn_module_state-200.pt   -o ../output/dataset1/qinn_standalone/run1/eval   -c ../config/config_qinn_standalone_example.json
+python evaluate_qinn.py -i ../input/dataset1/dataset_1_pions_1.hdf5   --checkpoint ../output/dataset1/qinn_standalone/run1/checkpoints/qinn_module_state-200.pt   -o ../output/dataset1/qinn_standalone/run1/eval   -c ../config/config_qinnstandaloneexample.json
 ```
 
 Questa pipeline non passa da `WGANGP` e non usa loss avversaria GAN: allena direttamente qINN con obiettivo di ricostruzione + prior matching.
