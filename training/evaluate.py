@@ -545,13 +545,22 @@ def main(args):
     else:
         chunks = [models]
 
+    config_path = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', 'train', 'config.json')
+    run_config = json.load(open(config_path, 'r'))
+    model_name = run_config.get('hp_config', {}).get('model', '')
+    force_single_process = (model_name == 'BNReLUqINN')
+    parallel_jobs = 0 if ((args.debug and not args.istiming) or force_single_process) else -1
+
+    if force_single_process:
+        print('[93m[WARN][0m Force single-process evaluate for BNReLUqINN to avoid TF/CUDA multiprocessing context failures')
+
     for models in chunks:
         arguments = (repeat(args), models)
         if 'dataset1' in args.input_file:
-            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if (args.debug and not args.istiming) else -1)
+            results = execute_multi_tasks(plot_model_i, *arguments, parallel=parallel_jobs)
             filename = f'chi2.csv'
         elif 'dataset2' in args.input_file:
-            results = execute_multi_tasks(plot_model_i, *arguments, parallel=0 if (args.debug and not args.istiming) else -1)
+            results = execute_multi_tasks(plot_model_i, *arguments, parallel=parallel_jobs)
             filename = f'classifier.csv'
         df = pd.DataFrame(results).sort_values(by=['ckpt'])
         df_name = os.path.join(args.train_path, f'{particle}s_eta_{args.eta_slice}{suffix}', os.path.splitext(os.path.basename(__file__))[0], filename)
