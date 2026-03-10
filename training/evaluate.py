@@ -349,7 +349,7 @@ def best_ckpt(args, df, cache=False, alt='', mask_cache=False):
     chi_name = os.path.join(best_folder, 'chi2.pdf')
     if not (os.path.exists(chi_name) and cache):
         os.makedirs(best_folder, exist_ok=True)
-        best_x = int(df[df[f'All{alt}'] == df[f'All{alt}'].min()]['ckpt'] * 1000)
+        best_x = int((df.loc[df[f'All{alt}'].idxmin(), 'ckpt']) * 1000)
         best_y = float(df[f'All{alt}'].min())
         x = df['ckpt'] * 1000
         y = df[f'All{alt}']

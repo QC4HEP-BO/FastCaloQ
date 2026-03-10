@@ -126,7 +126,7 @@ def plot_frame(categories, xlabel, ylabel, label_pos='left', add_summary_panel=T
         length = len(categories)
         width = int(np.ceil(np.sqrt(length)))
         height = int(np.ceil(length / width))
-        fig, axes = plt.subplots(nrows=height, ncols=width, figsize=(4*width, 4*height))
+        fig, axes = plt.subplots(nrows=height, ncols=width, figsize=(4*width, 4*height), squeeze=False)
         for ax in axes.flatten():
             ax.axis("off")
         for index, energy in enumerate(categories):
