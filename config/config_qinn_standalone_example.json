@@ -1,0 +1,23 @@
+{
+    "qinn_batch_size": 256,
+    "qinn_epochs": 200,
+    "qinn_lr": 0.0001,
+    "qinn_weight_decay": 0.0,
+    "qinn_recon_weight": 1.0,
+    "qinn_prior_weight": 0.1,
+    "qinn_checkpoint_every": 10,
+    "qinn_seed": 11,
+    "qinn_eval_batch_size": 512,
+    "qinn_module_kwargs": {
+        "use_pennylane": true,
+        "n_qubits": 6,
+        "n_q_layers": 2,
+        "q_device": "default.qubit",
+        "q_diff_method": "best",
+        "q_shots": null,
+        "nonneg_output": true,
+        "q_capture_quantum_state": false,
+        "q_capture_state_kind": "statevector",
+        "q_capture_every_n_calls": 100
+    }
+}

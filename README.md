@@ -109,3 +109,21 @@ L'integrazione avviene via bridge TensorFlow->PyTorch (`tf.py_function`):
 
 Questa modalita' e' adatta a integrazione/esecuzione e validazione iniziale.
 
+
+## Pipeline qINN standalone (separata da GAN)
+
+Per avere una procedura **vera qINN** separata dalla chain GAN, usa gli script dedicati:
+
+```bash
+cd training
+python train_qinn.py -i ../input/dataset1/dataset_1_pions_1.hdf5   -o ../output/dataset1/qinn_standalone/run1   -c ../config/config_qinn_standalone_example.json
+```
+
+Valutazione qINN standalone (checkpoint torch):
+
+```bash
+cd training
+python evaluate_qinn.py -i ../input/dataset1/dataset_1_pions_1.hdf5   --checkpoint ../output/dataset1/qinn_standalone/run1/checkpoints/qinn_module_state-200.pt   -o ../output/dataset1/qinn_standalone/run1/eval   -c ../config/config_qinn_standalone_example.json
+```
+
+Questa pipeline non passa da `WGANGP` e non usa loss avversaria GAN: allena direttamente qINN con obiettivo di ricostruzione + prior matching.
