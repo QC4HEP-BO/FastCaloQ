@@ -24,8 +24,7 @@
         "q_entanglement": "linear",
         "q_capture_quantum_state": false,
         "q_capture_state_kind": "statevector",
-        "q_capture_every_n_calls": 100,
-        "q_capture_max_calls": 10
+        "q_capture_every_n_calls": 100
     },
     "qinn_output_dim": 100,
     "qinn_torch_device": "cpu",

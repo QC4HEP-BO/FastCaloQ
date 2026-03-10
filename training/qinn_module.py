@@ -62,7 +62,6 @@ class QuantumINNBlock(nn.Module):
         capture_quantum_state: bool = False,
         capture_state_kind: str = "statevector",
         capture_every_n_calls: int = 1,
-        capture_max_calls: int = -1,
     ):
         super().__init__()
 
@@ -79,7 +78,6 @@ class QuantumINNBlock(nn.Module):
         self.capture_quantum_state = capture_quantum_state
         self.capture_state_kind = capture_state_kind
         self.capture_every_n_calls = max(1, int(capture_every_n_calls))
-        self.capture_max_calls = int(capture_max_calls)
         self._capture_call_count = 0
         self._captured_count = 0
         self._last_capture = {}
@@ -150,8 +148,6 @@ class QuantumINNBlock(nn.Module):
         self._capture_call_count += 1
         if self._capture_call_count % self.capture_every_n_calls != 0:
             return
-        if self.capture_max_calls >= 0 and self._captured_count >= self.capture_max_calls:
-            return
 
         if direction == "forward":
             state = self.qnode_fwd_state(x, self.weights)
@@ -215,7 +211,6 @@ class QuantumINN(nn.Module):
         capture_quantum_state: bool = False,
         capture_state_kind: str = "statevector",
         capture_every_n_calls: int = 1,
-        capture_max_calls: int = -1,
     ):
         super().__init__()
 
@@ -257,7 +252,6 @@ class QuantumINN(nn.Module):
                     capture_quantum_state=capture_quantum_state,
                     capture_state_kind=capture_state_kind,
                     capture_every_n_calls=capture_every_n_calls,
-                    capture_max_calls=capture_max_calls,
                 )
                 for i in range(n_blocks)
             ]
@@ -380,7 +374,6 @@ class QINNModule(nn.Module):
         q_capture_quantum_state: bool = False,
         q_capture_state_kind: str = "statevector",
         q_capture_every_n_calls: int = 1,
-        q_capture_max_calls: int = -1,
         **_: object,
     ):
         super().__init__()
@@ -424,7 +417,6 @@ class QINNModule(nn.Module):
             capture_quantum_state=q_capture_quantum_state,
             capture_state_kind=q_capture_state_kind,
             capture_every_n_calls=q_capture_every_n_calls,
-            capture_max_calls=q_capture_max_calls,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
