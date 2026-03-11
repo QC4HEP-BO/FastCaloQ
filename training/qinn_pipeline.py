@@ -17,7 +17,8 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from common import filter_energy, get_kin
+from common import get_kin
+from data import filter_energy
 from qinn_module import QINNModule, mmd_rbf
 
 
