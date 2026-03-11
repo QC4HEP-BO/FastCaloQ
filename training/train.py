@@ -214,6 +214,7 @@ def main(args):
         'particle': particle+'s',
         'eta_slice': '20_25',
         'checkpoint_interval': 1000 if not args.debug else 10,
+        'progress_interval': args.progress_interval,
         'output': args.output_path,
         'max_iter': 4E5 if args.loading else args.max_iter,
         'cache': False,
@@ -261,6 +262,7 @@ if __name__ == '__main__':
     parser.add_argument('--label_scheme', type=str, required=False, default='log_ratio', help='Label scheme defined in common.py (default: %(default)s)')
     parser.add_argument('--split_energy_position', type=str, required=False, default='', choices=['', 'le12', 'ge12', 'ge12le18', 'ge18'], help='Energy split training (default: %(default)s)')
     parser.add_argument('--max_iter', type=int, required=False, default=1E6, help='Number of iterations (default: %(default)s)')
+    parser.add_argument('--progress_interval', type=int, required=False, default=100, help='Progress logging interval in iterations (default: %(default)s)')
     parser.add_argument('--quantum', required=False, action='store_true', help='To be specified when using quantum models (default: %(default)s)')
 
     args = parser.parse_args()

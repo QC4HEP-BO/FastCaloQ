@@ -23,6 +23,8 @@ import tensorflow_quantum as tfq
 import cirq
 import sympy
 
+from qinn_bridge import TorchQINNLayer
+
 def encodeSingleInputIntoQuantumCircuit(singleInputToEncode, qubitsForEncoding, evaluateLabels=False):
     singleInputCircuit = cirq.Circuit()
     for i in range(len(singleInputToEncode)):
@@ -50,6 +52,7 @@ def encodeIntoQuantumCircuit(inputToEncode, numberOfQubits, inputBatchSize=None,
 class WGANGP:
     def __init__(self, job_config, hp_config, logger, config_string=None, enableQuantum=False):
         tf.keras.backend.set_floatx("float32")
+        self.hp_config = hp_config
         self.loading = job_config.get('loading', None)
         if config_string:
             self.set_special_config(config_string)
@@ -89,6 +92,7 @@ class WGANGP:
         self.particle = job_config.get('particle', 'photons')
         self.eta_slice = job_config.get('eta_slice', '20_25')
         self.checkpoint_interval = job_config.get('checkpoint_interval', 1000)
+        self.progress_interval = max(1, int(job_config.get('progress_interval', 100)))
         self.output = os.path.join(job_config.get('output', '../output'), f'{self.particle}_eta_{self.eta_slice}')
         if self.loading is not None:
             self.output += '_load'
@@ -238,6 +242,40 @@ class WGANGP:
                         G = layers.BatchNormalization()(G)
                         G = layers.ReLU()(G)
             G = layers.Dense(self.nvoxels,use_bias=bias_node,kernel_initializer=initializer,bias_initializer="zeros")(G)
+            G = layers.ReLU()(G)
+        elif self.model == "BNReLUqINN":
+            qinn_input = noise if self.conditional_dim == 0 else con
+            qinn_output_dim = int(self.latent_dim + self.conditional_dim)
+            qinn_output_dim = int(self.generatorLayers[0]) if self.generatorLayers[0] != 0 else qinn_output_dim
+
+            qinn_state_cfg = self.hp_config.get("qinn_state_path", os.path.join("checkpoints", "qinn_module_state-init.pt"))
+            qinn_state_path = qinn_state_cfg if os.path.isabs(qinn_state_cfg) else os.path.join(self.output, qinn_state_cfg)
+            qinn_layer = TorchQINNLayer(
+                module_path=self.hp_config.get("qinn_module_path", "qinn_module"),
+                module_class=self.hp_config.get("qinn_module_class", "QINNModule"),
+                module_kwargs_json=json.dumps(self.hp_config.get("qinn_module_kwargs", {})),
+                output_dim=self.hp_config.get("qinn_output_dim", qinn_output_dim),
+                torch_device=self.hp_config.get("qinn_torch_device", "cpu"),
+                state_path=qinn_state_path,
+                save_state_if_missing=self.hp_config.get("qinn_save_state_if_missing", True),
+                deterministic_init=self.hp_config.get("qinn_deterministic_init", False),
+                init_seed=self.hp_config.get("qinn_init_seed", 11),
+                require_state=self.hp_config.get("qinn_require_state", False),
+                name="qinn_bridge",
+            )
+            G = qinn_layer(qinn_input)
+
+            if self.generatorLayers[1] != 0:
+                G = layers.Dense(self.generatorLayers[1], kernel_initializer=initializer, bias_initializer="zeros")(G)
+                G = layers.BatchNormalization()(G)
+                G = layers.ReLU()(G)
+
+            if self.generatorLayers[2] != 0:
+                G = layers.Dense(self.generatorLayers[2], use_bias=bias_node, kernel_initializer=initializer, bias_initializer="zeros")(G)
+                G = layers.BatchNormalization()(G)
+                G = layers.ReLU()(G)
+
+            G = layers.Dense(self.nvoxels, use_bias=bias_node, kernel_initializer=initializer, bias_initializer="zeros")(G)
             G = layers.ReLU()(G)
         elif self.model == "BNswish":
             initializer = tf.keras.initializers.glorot_normal()
@@ -594,6 +632,18 @@ class WGANGP:
             self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.G.trainable_variables))
             return D_loss_curr, G_loss_curr
 
+    def _save_qinn_checkpoint_artifacts(self, checkpoint_dir, iteration):
+        if self.model != "BNReLUqINN":
+            return
+
+        try:
+            qinn_layer = self.G.get_layer("qinn_bridge")
+        except ValueError:
+            return
+
+        if hasattr(qinn_layer, "save_checkpoint_artifacts"):
+            qinn_layer.save_checkpoint_artifacts(checkpoint_dir, iteration)
+
     def train(self, X_train, label):
         checkpoint_dir = os.path.join(self.output, 'checkpoints')
         logging.info(f'Training size X: {X_train.shape}, label: {label.shape}')
@@ -629,6 +679,7 @@ class WGANGP:
                 else:
                     e_time = time.time()
                     self.saver.save(file_prefix=checkpoint_dir + "/model")
+                    self._save_qinn_checkpoint_artifacts(checkpoint_dir, iteration)
                     save_time = time.time() - e_time
                     with open(os.path.join(self.train_folder, 'result.json'), 'w') as fp:
                         json.dump(meta_data, fp, indent=2)
@@ -645,6 +696,11 @@ class WGANGP:
                     self.plot_loss(verbose='ERROR')
                     dur_train_loop, dur_convert_loop, dur_getnext_loop = 0, 0, 0
 
+            if iteration % self.progress_interval == 0 and iteration % self.checkpoint_interval != 0:
+                logging.info(
+                    f"Iter: {iteration} (progress); Dloss: {D_loss_curr:.4f}; Gloss: {G_loss_curr:.4f}; "
+                    f"GetNext: {dur_getnext_loop:.4f}, ConvertLoop: {dur_convert_loop:.2f}, TrainLoop: {dur_train_loop:.2f}"
+                )
 
             getnext_loop_start = time.time()
             X, Labels = self.ds_iter.get_next()
